@@ -9,9 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tailwindcss/forms": "^0.5.9",
+    "axios": "^1.7.7",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.6.4",
+    "next": "14.2.13",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.2.13"
+    "react-hook-form": "^7.53.0",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "postcss": "^8",
