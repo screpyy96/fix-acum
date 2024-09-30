@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from '@/context/AuthContext';
+import Navbar from '@/components/Navbar';
 
 export const metadata = {
   title: "Fix Acum",
@@ -11,7 +12,10 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AuthProvider>
-          {children}
+          <Navbar />
+          <main className="container mx-auto mt-4">
+            {children}
+          </main>
         </AuthProvider>
       </body>
     </html>

@@ -1,61 +1,34 @@
+// src/hooks/useAuth.js
+
 "use client"
 
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useContext } from 'react';
+import { AuthContext } from '@/context/AuthContext';
 
-export function useAuthHook() {
-  const { state, dispatch } = useAuth();
-  const router = useRouter();
+export default function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
 
-  const login = async (email, password, userType) => {
-    try {
-      const response = await fetch(`/api/auth/login-${userType}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+  const { user, loading, login, logout } = context;
+  
+  const isAuthenticated = !!user; // Simplificat
+  const userType = user ? user.type : null;
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('auth_token', data.token);
-        dispatch({ type: 'LOGIN', payload: data.user });
-        router.push('/dashboard');
-      } else {
-        throw new Error('Login failed');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
+  return { 
+    user, 
+    loading, 
+    login,
+    logout,
+    isAuthenticated,
+    userType,
+    isClient: user?.type === 'client',
+    isWorker: user?.type === 'worker',
+    getToken: () => localStorage.getItem('token'),
+    clearAuth: () => {
+      logout();
+      localStorage.removeItem('token');
     }
   };
-
-  const logout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      localStorage.removeItem('auth_token');
-      dispatch({ type: 'LOGOUT' });
-      router.push('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  const register = async (userData, userType) => {
-    try {
-      const response = await fetch(`/api/auth/register-${userType}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-
-      if (response.ok) {
-        router.push('/login');
-      } else {
-        throw new Error('Registration failed');
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-    }
-  };
-
-  return { user: state.user, loading: state.loading, login, logout, register };
 }

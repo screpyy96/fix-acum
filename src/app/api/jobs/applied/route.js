@@ -6,19 +6,21 @@ import { getCurrentUser } from '@/lib/auth';
 export async function GET(request) {
   try {
     const user = await getCurrentUser(request);
-    if (!user || user.type !== 'client') {
+    if (!user || user.type !== 'worker') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectToDatabase();
     
-    const clientJobs = await Job.find({ clientId: user.id })
-                                .sort({ createdAt: -1 })
-                                .limit(10);
+    // Presupunem că avem un câmp 'applicants' în modelul Job
+    // care conține ID-urile workerilor care au aplicat
+    const appliedJobs = await Job.find({ applicants: user.id })
+                                 .sort({ createdAt: -1 })
+                                 .limit(10); // Limităm la ultimele 10 joburi aplicate
 
-    return NextResponse.json(clientJobs);
+    return NextResponse.json(appliedJobs);
   } catch (error) {
-    console.error('Error fetching client jobs:', error);
+    console.error('Error fetching applied jobs:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

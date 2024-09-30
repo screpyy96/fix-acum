@@ -1,50 +1,87 @@
 "use client"
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useReducer, useContext, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode'; // Importul corectat pentru versiunile noi
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 const initialState = {
   user: null,
-  loading: true,
+  token: null,
 };
 
-function authReducer(state, action) {
+const authReducer = (state, action) => {
   switch (action.type) {
     case 'LOGIN':
-      return { ...state, user: action.payload, loading: false };
+      return {
+        ...state,
+        user: action.payload.user,
+        token: action.payload.token,
+      };
     case 'LOGOUT':
-      return { ...state, user: null, loading: false };
-    case 'SET_LOADING':
-      return { ...state, loading: action.payload };
+      return {
+        ...state,
+        user: null,
+        token: null,
+      };
     default:
       return state;
   }
-}
+};
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
-    // Aici puteți verifica dacă utilizatorul este autentificat
-    // de exemplu, verificând un token stocat în localStorage
-    const checkAuth = async () => {
-      const token = localStorage.getItem('auth_token');
-      if (token) {
-        // Verificați token-ul cu backend-ul
-        // Dacă este valid, dispatch({ type: 'LOGIN', payload: userData });
-      } else {
-        dispatch({ type: 'SET_LOADING', payload: false });
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        const currentTime = Date.now() / 1000;
+        if (decoded.exp < currentTime) {
+          console.log('Token has expired');
+          localStorage.removeItem('token');
+          dispatch({ type: 'LOGOUT' });
+        } else {
+          dispatch({
+            type: 'LOGIN',
+            payload: { user: decoded, token },
+          });
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        localStorage.removeItem('token');
       }
-    };
-    checkAuth();
+    }
   }, []);
 
+  const login = ({ token, user }) => {
+    console.log('Logging in with token:', token);
+    console.log('User data:', user);
+    localStorage.setItem('token', token);
+    dispatch({
+      type: 'LOGIN',
+      payload: { user, token },
+    });
+  };
+
+  const logout = () => {
+    console.log('Logging out');
+    localStorage.removeItem('token');
+    dispatch({ type: 'LOGOUT' });
+  };
+
   return (
-    <AuthContext.Provider value={{ state, dispatch }}>
+    <AuthContext.Provider value={{ ...state, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

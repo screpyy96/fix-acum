@@ -6,11 +6,25 @@ import * as yup from 'yup';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const trades = [
+  "Instalator băi", "Fierar / Prelucrător metal", "Zidar", "Constructor",
+  "Tâmplar / Dulgher", "Instalator sisteme CCTV / Satelit / Alarme", "Curățenie",
+  "Specialist în drenaj", "Pavator alei", "Electrician", "Montator pardoseli",
+  "Grădinar / Peisagist", "Inginer gaze / Termice", "Meșter universal",
+  "Specialist în bucătării", "Lăcătuș", "Specialist în mansardări",
+  "Zugrav și decorator", "Dezinsecție și deratizare", "Tencuitor / Finisator",
+  "Instalator", "Servicii de mutare", "Specialist în energie regenerabilă",
+  "Acoperișuri", "Sisteme de securitate / Alarme", "Meșter specialist",
+  "Pietrar / Cioplitor în piatră", "Specialist în piscine", "Faianțar",
+  "Meșteșugar tradițional", "Arborist", "Montator ferestre / Instalator verande"
+];
+
 const schema = yup.object().shape({
   name: yup.string().required('Numele este obligatoriu'),
   email: yup.string().email('Email invalid').required('Email-ul este obligatoriu'),
   password: yup.string().min(6, 'Parola trebuie să aibă cel puțin 6 caractere').required('Parola este obligatorie'),
   confirmPassword: yup.string().oneOf([yup.ref('password'), null], 'Parolele trebuie să coincidă'),
+  trade: yup.string().required('Meseria este obligatorie'),
 });
 
 export default function RegisterWorker() {
@@ -93,10 +107,25 @@ export default function RegisterWorker() {
                 name="confirmPassword"
                 type="password"
                 {...register('confirmPassword')}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Confirmă parola"
               />
               {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
+            </div>
+            <div>
+              <label htmlFor="trade" className="sr-only">Meserie</label>
+              <select
+                id="trade"
+                name="trade"
+                {...register('trade')}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              >
+                <option value="">Selectează meseria</option>
+                {trades.map((trade, index) => (
+                  <option key={index} value={trade}>{trade}</option>
+                ))}
+              </select>
+              {errors.trade && <p className="text-red-500 text-xs mt-1">{errors.trade.message}</p>}
             </div>
           </div>
 
