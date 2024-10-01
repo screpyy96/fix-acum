@@ -1,17 +1,25 @@
 import React from 'react';
+import { useForm } from '@/context/FormProvider';
 
-const ContactInfo = ({ formData, onChange, onNext, onPrev }) => {
+const ContactInfo = () => {
+  const { formData, handleInputChange, nextStep, prevStep } = useForm();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    nextStep();
+  };
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Informații de Contact</h2>
-      <form onSubmit={(e) => { e.preventDefault(); onNext(); }}>
+      <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="name" className="block mb-2">Nume</label>
           <input
             type="text"
             id="name"
-            value={formData.name || ''}
-            onChange={(e) => onChange({ name: e.target.value })}
+            value={formData.clientData.name || ''}
+            onChange={(e) => handleInputChange('clientData', { name: e.target.value })}
             className="w-full p-2 border rounded"
             required
           />
@@ -21,14 +29,14 @@ const ContactInfo = ({ formData, onChange, onNext, onPrev }) => {
           <input
             type="email"
             id="email"
-            value={formData.email || ''}
-            onChange={(e) => onChange({ email: e.target.value })}
+            value={formData.clientData.email || ''}
+            onChange={(e) => handleInputChange('clientData', { email: e.target.value })}
             className="w-full p-2 border rounded"
             required
           />
         </div>
         <div className="flex justify-between">
-          <button type="button" onClick={onPrev} className="bg-gray-300 text-black px-4 py-2 rounded">
+          <button type="button" onClick={prevStep} className="bg-gray-300 text-black px-4 py-2 rounded">
             Înapoi
           </button>
           <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">

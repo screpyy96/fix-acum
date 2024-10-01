@@ -11,27 +11,29 @@ export async function POST(request) {
     const { job, client } = await request.json();
     console.log('Received job data:', JSON.stringify(job, null, 2));
     console.log('Received client data:', JSON.stringify(client, null, 2));
-
+    console.log('Received client data:', client);
+    
     await connectToDatabase();
     console.log('Connected to database');
 
     let existingClient = await Client.findOne({ email: client.email });
-    
+
+    // Generăm un clientId unic
     if (!existingClient) {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(client.password, salt);
-      
       existingClient = new Client({
         name: client.name,
         email: client.email,
         password: hashedPassword,
         clientId: uuidv4(),
       });
-      
+
       await existingClient.save();
       console.log('New client created:', JSON.stringify(existingClient, null, 2));
     }
 
+    // Se asigură că ne folosim de clientul existent
     const newJob = new Job({
       title: job.title,
       description: job.description,
@@ -46,7 +48,7 @@ export async function POST(request) {
 
     // Generare token
     const token = jwt.sign(
-      { 
+      {
         id: existingClient._id,
         email: existingClient.email,
         name: existingClient.name,
@@ -67,7 +69,6 @@ export async function POST(request) {
       },
       job: newJob,
     }, { status: 201 });
-
   } catch (error) {
     console.error('Error in job creation:', error);
     return NextResponse.json({ 

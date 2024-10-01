@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import useAuth from '@/hooks/useAuth';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
   const { user, isClient, isWorker, loading, isAuthenticated } = useAuth();
   const [recentJobs, setRecentJobs] = useState([]);
-  const [dashboardData, setDashboardData] = useState({});
+
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -24,17 +26,23 @@ export default function Dashboard() {
             console.log('Fetched jobsData:', jobsData);
             setRecentJobs(jobsData || []);
 
-            const clientDataResponse = await fetch('/api/client/dashboard');
-            if (!clientDataResponse.ok) {
-              throw new Error('Failed to fetch client dashboard data');
-            }
-            const clientData = await clientDataResponse.json();
-            setDashboardData(clientData);
+            
+          
+
           } else if (isWorker) {
             // Fetch worker specific data here
+            const jobsResponse = await fetch('/api/jobs/worker-jobs');
+            if (!jobsResponse.ok) {
+              throw new Error('Failed to fetch worker jobs');
+            }
+            const jobsData = await jobsResponse.json();
+            console.log('Fetched jobsData:', jobsData);
+            setRecentJobs(jobsData || []);
           }
         } catch (error) {
           console.error('Error fetching dashboard data:', error);
+          setRecentJobs([]);
+        
         } finally {
           setIsLoading(false);
         }
@@ -43,6 +51,46 @@ export default function Dashboard() {
 
     fetchDashboardData();
   }, [isAuthenticated, isClient, isWorker]);
+
+  const handleApply = async (jobId) => {
+    try {
+      const response = await fetch(`/api/jobs/${jobId}/apply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message || 'Applied successfully!');
+        setRecentJobs(prevJobs => prevJobs.map(job => 
+          job._id === jobId ? { ...job, hasApplied: true } : job
+        ));
+
+        // Creează o notificare pentru client
+        await fetch('/api/notifications/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recipient: result.job.clientId,
+            recipientModel: 'Client',
+            message: `A new worker has applied to your job: ${result.job.title}`,
+            type: 'newApplication',
+            relatedJob: jobId,
+          }),
+        });
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to apply for the job');
+      }
+    } catch (error) {
+      console.error('Error applying to job:', error);
+      alert('An error occurred while applying for the job');
+    }
+  };
 
   if (loading || isLoading) {
     return <div>Loading...</div>;
@@ -63,6 +111,7 @@ export default function Dashboard() {
             <p className="text-black"><strong>Name:</strong> {user.name}</p>
             <p className="text-black"><strong>Email:</strong> {user.email}</p>
             <p className="text-black"><strong>Type:</strong> {user.type}</p>
+            {isWorker && <p className="text-black"><strong>Trade:</strong> {user.trade}</p>}
           </div>
         )}
 
@@ -78,7 +127,7 @@ export default function Dashboard() {
                     </Link>
                     <p className="text-gray-600">Status: {job.status}</p>
                     <p className="text-gray-600">Trade Type: {job.tradeType}</p>
-                    <p className="text-gray-600">Job Type: {job?.jobType}</p>
+                    <p className="text-gray-600">Job Type: {job.jobType}</p>
                   </li>
                 ))}
               </ul>
@@ -90,7 +139,7 @@ export default function Dashboard() {
 
         {isWorker && (
           <div className="col-span-1 md:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Your Applied Jobs</h2>
+            <h2 className="text-xl font-semibold mb-4">Available Jobs for Your Trade</h2>
             {recentJobs.length > 0 ? (
               <ul className="space-y-4">
                 {recentJobs.map(job => (
@@ -101,12 +150,23 @@ export default function Dashboard() {
                     <p className="text-gray-600">Status: {job.status}</p>
                     <p className="text-gray-600">Trade Type: {job.tradeType}</p>
                     <p className="text-gray-600">Job Type: {job.jobType}</p>
-                    <p className="text-gray-600 mt-2">{job.description}</p>
+                    {job.hasApplied ? (
+                      <span className="mt-2 inline-block bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded">
+                        Applied
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleApply(job._id)}
+                        className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
+                      >
+                        Apply
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p>No jobs applied to yet.</p>
+              <p>No available jobs matching your trade.</p>
             )}
           </div>
         )}

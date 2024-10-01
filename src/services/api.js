@@ -1,18 +1,17 @@
 const API_BASE_URL = '/api';
 
 async function fetchWithAuth(endpoint, options = {}) {
-  const token = localStorage.getItem('token');
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+  
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include', // Adaugă această linie
   });
+  
   if (!response.ok) {
     throw new Error('API request failed');
   }

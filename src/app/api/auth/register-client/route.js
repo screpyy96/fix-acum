@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Client from '@/models/Client';
 import bcrypt from 'bcryptjs';
+import {uuidv4} from 'uuid';
 
 export async function POST(request) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request) {
       name,
       email,
       password: hashedPassword,
-      clientId, // Includeți clientId aici
+      clientId: clientId || uuidv4(), // Generează un nou UUID dacă clientId nu este furnizat
     });
 
     await newClient.save();
