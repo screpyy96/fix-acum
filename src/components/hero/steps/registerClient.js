@@ -16,7 +16,7 @@ const RegisterClient = ({ onRegister }) => {
       return;
     }
     setPasswordError('');
-    onRegister();
+    onRegister(); // Asigură-te că onRegister trimite datele corecte
   };
 
   return (

@@ -26,7 +26,6 @@ export async function POST(request) {
         name: client.name,
         email: client.email,
         password: hashedPassword,
-        clientId: uuidv4(),
       });
 
       await existingClient.save();

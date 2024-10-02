@@ -7,16 +7,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const trades = [
-  "Instalator băi", "Fierar / Prelucrător metal", "Zidar", "Constructor",
-  "Tâmplar / Dulgher", "Instalator sisteme CCTV / Satelit / Alarme", "Curățenie",
-  "Specialist în drenaj", "Pavator alei", "Electrician", "Montator pardoseli",
-  "Grădinar / Peisagist", "Inginer gaze / Termice", "Meșter universal",
-  "Specialist în bucătării", "Lăcătuș", "Specialist în mansardări",
-  "Zugrav și decorator", "Dezinsecție și deratizare", "Tencuitor / Finisator",
-  "Instalator", "Servicii de mutare", "Specialist în energie regenerabilă",
-  "Acoperișuri", "Sisteme de securitate / Alarme", "Meșter specialist",
-  "Pietrar / Cioplitor în piatră", "Specialist în piscine", "Faianțar",
-  "Meșteșugar tradițional", "Arborist", "Montator ferestre / Instalator verande"
+  "Instalator", "Fierar", "Zidar", "Constructor", "Tâmplar", "Curățenie", 
+  "Drenaj", "Pavator", "Electrician", "Montator", "Grădinar", "Inginer", 
+  "Meșter", "Bucătării", "Lăcătuș", "Mansardări", "Zugrav", "Dezinsecție", 
+  "Tencuitor", "Mutare", "Energie", "Acoperișuri", "Securitate", 
+  "Specialist", "Pietrar", "Piscine", "Faianțar", "Meșteșugar", "Arborist", 
+  "Ferestre"
 ];
 
 const schema = yup.object().shape({
