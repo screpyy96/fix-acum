@@ -43,7 +43,7 @@ export default function RegisterWorker() {
       });
 
       if (response.ok) {
-        router.push('/login/worker');
+        router.push('/login');
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'A apărut o eroare la înregistrare');
