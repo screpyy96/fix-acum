@@ -50,10 +50,7 @@ export default function Navbar() {
                 <span className="font-semibold text-gray-500 text-lg">Fix Acum</span>
               </Link>
             </div>
-            <div className="hidden md:flex items-center space-x-1">
-              <Link href="/jobs" className="py-4 px-2 text-gray-500 hover:text-green-500 transition duration-300">Joburi</Link>
-              <Link href="/workers" className="py-4 px-2 text-gray-500 hover:text-green-500 transition duration-300">Muncitori</Link>
-            </div>
+           
           </div>
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
@@ -61,8 +58,8 @@ export default function Navbar() {
                 <button onClick={toggleDropdown} className="flex items-center space-x-1 py-2 px-3 bg-blue-600 hover:bg-blue-300 hover:text-black rounded transition duration-300">
                   <span>
                     Bine ai venit, {user.name} 
-                    {user.email && ` (${user.email})`} 
-                    {userType && ` [${userType.charAt(0).toUpperCase() + userType.slice(1)}]`}
+                    
+                   
                   </span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
@@ -70,13 +67,9 @@ export default function Navbar() {
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
-                    <div className="px-4 py-2 border-b">
-                      <p className="text-sm font-medium text-gray-700">{user.name}</p>
-                      {user.email && <p className="text-xs text-gray-500">{user.email}</p>}
-                      {userType && <p className="text-xs text-gray-500 capitalize">{userType}</p>}
-                    </div>
+                    
                     <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</Link>
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</Link>
+                    <Link href="/setari" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Setari</Link>
                     <LogoutButton onLogout={logout} />
                   </div>
                 )}
@@ -110,7 +103,7 @@ export default function Navbar() {
         {user ? (
           <>
             <Link href="/dashboard" className="block py-2 px-4 text-sm hover:bg-green-500 hover:text-white transition duration-300">Dashboard</Link>
-            <Link href="/profile" className="block py-2 px-4 text-sm hover:bg-green-500 hover:text-white transition duration-300">Profile</Link>
+            
             <LogoutButton onLogout={logout} />
           </>
         ) : (

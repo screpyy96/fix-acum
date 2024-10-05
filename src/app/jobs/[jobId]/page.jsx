@@ -13,21 +13,16 @@ export default function JobDetails({ params }) {
 
   useEffect(() => {
     const fetchJob = async () => {
-      console.log('Fetching job with ID:', jobId);
       try {
         const response = await fetch(`/api/jobs/${jobId}`);
-        console.log('Response status:', response.status);
         if (response.ok) {
           const data = await response.json();
-          console.log('Job data:', data);
           setJob(data);
         } else {
           const errorData = await response.json();
-          console.error('Error response:', errorData);
           setError(errorData.error || 'Job not found');
         }
       } catch (err) {
-        console.error('Error fetching job:', err);
         setError('Error fetching job details');
       }
     };
@@ -52,33 +47,62 @@ export default function JobDetails({ params }) {
         alert('Applied to job successfully');
         router.refresh();
       } else {
-        console.error('Error applying to job:', data);
         alert(data.error || 'Failed to apply to job');
       }
     } catch (err) {
-      console.error('Error applying to job:', err);
       alert('Something went wrong: ' + err.message);
     }
   };
 
-  const hasApplied = job?.applicants?.some(applicant => applicant.workerId === user.id);
-
+  const hasApplied = job?.applicants?.some(applicant => applicant.workerId === applicant.workerId);
+console.log(hasApplied)
   return (
-    <div>
-      {/* Arată detaliile jobului */}
-      {error && <p className="text-red-500">{error}</p>}
+    <div className="max-w-4xl mx-auto p-4">
+      {/* Error message */}
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      {/* Job details */}
       {job && (
-        <div>
-          <h1>{job.title}</h1>
-          <p>{job.description}</p>
-          {/* Alte detalii */}
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <h1 className="text-2xl font-bold mb-4">{job.title}</h1>
+          <p className="text-sm text-gray-500 mb-2">Location: {job.location}</p>
+          <p className="text-sm text-gray-500 mb-4">Job ID: {job.id}</p>
+
+          <div className="mb-6">
+            <p className="text-lg font-medium mb-2">Job Description</p>
+            <p className="text-gray-700">{job.description}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+              <span className="block text-center text-xl font-semibold text-purple-600">{job.interestedCount}</span>
+              <p className="text-center text-gray-600">Tradespeople interested</p>
+            </div>
+            <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+              <span className="block text-center text-xl font-semibold text-purple-600">{job.shortlistedCount}</span>
+              <p className="text-center text-gray-600">Tradespeople shortlisted</p>
+            </div>
+          </div>
+
+          {/* Apply button */}
           <button
             onClick={handleApply}
-            className={`mt-4 ${hasApplied ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-700'} text-white font-bold py-2 px-4 rounded`}
+            className={`w-full py-3 px-4 text-white font-bold rounded-lg ${hasApplied ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}
             disabled={hasApplied}
           >
-            {hasApplied ? 'Already Applied' : 'Apply to this Job'}
+            {hasApplied ? 'Already Applied' : 'Express interest'}
           </button>
+        </div>
+      )}
+
+      {/* Map placeholder */}
+      {job && (
+        <div className="mt-6">
+          <h2 className="text-xl font-medium mb-4">Location on Map</h2>
+          <div className="w-full h-64 bg-gray-300 rounded-lg shadow-md">
+            {/* Add your map component here */}
+            <p className="text-center pt-24 text-gray-600">Map Placeholder</p>
+          </div>
         </div>
       )}
     </div>

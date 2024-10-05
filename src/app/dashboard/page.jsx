@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import useAuth from '@/hooks/useAuth';
 
 export default function DashboardRedirect() {
-  const { user, isClient, isWorker, loading } = useAuth();
+  const { isClient, isWorker, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
