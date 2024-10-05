@@ -2,7 +2,7 @@
 
 "use client"
 
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 
 export default function useAuth() {
@@ -15,6 +15,14 @@ export default function useAuth() {
   
   const isAuthenticated = !!user; // Simplificat
   const userType = user ? user.type : null;
+
+  useEffect(() => {
+    console.log('useAuth effect running');
+    console.log('isAuthenticated:', isAuthenticated);
+    console.log('isClient:', user?.type === 'client');
+    console.log('user:', user);
+    console.log('token in localStorage:', localStorage.getItem('token'));
+  }, [user, isAuthenticated]);
 
   return { 
     user, 

@@ -14,35 +14,30 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (isAuthenticated && (isClient || isWorker)) {
+      console.log('Fetching dashboard data. isAuthenticated:', isAuthenticated, 'isClient:', isClient);
+      console.log('User:', user);
+      console.log('Token in localStorage:', localStorage.getItem('token'));
+      if (isAuthenticated && isClient) {
         setIsLoading(true);
         try {
-          if (isClient) {
-            const jobsResponse = await fetch('/api/jobs/client-jobs');
-            if (!jobsResponse.ok) {
-              throw new Error('Failed to fetch client jobs');
+          console.log('Fetching client jobs');
+          const jobsResponse = await fetch('/api/jobs/client-jobs', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
-            const jobsData = await jobsResponse.json();
-            console.log('Fetched jobsData:', jobsData);
-            setRecentJobs(jobsData || []);
-
-            
-          
-
-          } else if (isWorker) {
-            // Fetch worker specific data here
-            const jobsResponse = await fetch('/api/jobs/worker-jobs');
-            if (!jobsResponse.ok) {
-              throw new Error('Failed to fetch worker jobs');
-            }
-            const jobsData = await jobsResponse.json();
-            console.log('Fetched jobsData:', jobsData);
-            setRecentJobs(jobsData || []);
+          });
+          console.log('Client jobs response:', jobsResponse);
+          if (!jobsResponse.ok) {
+            const errorData = await jobsResponse.json();
+            console.error('Error response:', errorData);
+            throw new Error(`Failed to fetch client jobs: ${errorData.error}`);
           }
+          const jobsData = await jobsResponse.json();
+          console.log('Fetched jobsData:', jobsData);
+          setRecentJobs(jobsData || []);
         } catch (error) {
           console.error('Error fetching dashboard data:', error);
           setRecentJobs([]);
-        
         } finally {
           setIsLoading(false);
         }
@@ -50,7 +45,10 @@ export default function Dashboard() {
     };
 
     fetchDashboardData();
-  }, [isAuthenticated, isClient, isWorker]);
+  }, [isAuthenticated, isClient, user]);
+
+  // Adăugați acest console.log pentru a verifica starea recentJobs
+  console.log('Current recentJobs:', recentJobs);
 
   const handleApply = async (jobId) => {
     try {

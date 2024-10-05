@@ -2,8 +2,7 @@ import mongoose from 'mongoose';
 
 const JobSchema = new mongoose.Schema({
   clientId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Client',
+    type: String,
     required: true,
   },
   title: {

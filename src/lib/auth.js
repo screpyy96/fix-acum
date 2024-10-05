@@ -26,6 +26,24 @@ export async function getSession(req) {
 }
 
 export async function getCurrentUser(req) {
-  const session = await getSession(req);
-  return session?.user;
+  console.log('Getting current user...');
+  let token = req.cookies.get('auth_token')?.value;
+  
+  // Verifică și header-ul de autorizare dacă cookie-ul nu există
+  if (!token) {
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+
+  console.log('Auth token:', token ? 'Present' : 'Missing');
+  if (!token) {
+    console.log('No auth token found');
+    return null;
+  }
+
+  const userData = verifyToken(token);
+  console.log('User data from token:', userData);
+  return userData;
 }

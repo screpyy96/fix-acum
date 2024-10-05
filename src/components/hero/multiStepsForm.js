@@ -94,6 +94,8 @@ const MultiStepsForm = ({tradeType, jobType}) => {
               type: 'client',
             }
           });
+          // Adăugați această linie pentru a stoca token-ul în localStorage
+          localStorage.setItem('token', result.token);
         }
         router.push('/dashboard');
       } else {
@@ -128,3 +130,4 @@ const MultiStepsForm = ({tradeType, jobType}) => {
 };
 
 export default MultiStepsForm;
+
