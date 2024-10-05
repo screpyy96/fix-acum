@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Client from '@/models/Client';
 import bcrypt from 'bcryptjs';
-import {uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request) {
   try {
@@ -30,6 +30,10 @@ export async function POST(request) {
     return NextResponse.json({ message: 'Client registered successfully' }, { status: 201 });
   } catch (error) {
     console.error('Registration error:', error);
-    return NextResponse.json({ error: 'Error registering client' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Error registering client', 
+      details: error.message, // Adaugă detalii despre eroare
+      stack: error.stack, // Adaugă stack trace pentru debugging
+    }, { status: 500 });
   }
 }

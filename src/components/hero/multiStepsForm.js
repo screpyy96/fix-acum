@@ -27,7 +27,7 @@ const MultiStepsForm = ({tradeType, jobType}) => {
         name: formData.clientData.name,
         email: formData.clientData.email,
         password: formData.clientData.password,
-        clientId: formData.clientId.toString(),
+        clientId: formData.clientId ? formData.clientId.toString() : uuidv4().toString(), // Asigură-te că clientId este un string
       };
 
       const response = await fetch('/api/auth/register-client', {
@@ -69,7 +69,7 @@ const MultiStepsForm = ({tradeType, jobType}) => {
           email: user.email,
         } : {
           ...formData.clientData,
-          clientId: formData.clientId || uuidv4(), // Asigură-te că clientId este un string
+          clientId: formData.clientId ? formData.clientId.toString() : uuidv4().toString(), // Asigură-te că clientId este un string
         },
       };
 
