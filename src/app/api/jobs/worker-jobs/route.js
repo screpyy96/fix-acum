@@ -1,40 +1,29 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Job from '@/models/Job';
-import Worker from '@/models/Worker';
-import { verify } from 'jsonwebtoken';
-
-const SECRET_KEY = process.env.JWT_SECRET;
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request) {
-  const token = request.cookies.get('auth_token')?.value;
-
-  if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
-    const decoded = verify(token, SECRET_KEY);
-    if (decoded.type !== 'worker') {
-      return NextResponse.json({ error: 'Only workers can view available jobs' }, { status: 403 });
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (user.type !== 'worker') {
+      return NextResponse.json({ error: 'Unauthorized - Not a worker' }, { status: 401 });
     }
 
     await connectToDatabase();
+    
+    // Fetch jobs that match the worker's trade and are still open
+    const workerJobs = await Job.find({ 
+      tradeType: user.trade,
+      status: 'open'
+    }).sort({ createdAt: -1 }).limit(10);
 
-    const worker = await Worker.findById(decoded.id);
-    if (!worker) {
-      return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
-    }
-
-    // Găsește joburile care sunt deschise și se potrivesc cu trade-ul workerului
-    const jobs = await Job.find({
-      tradeType: worker.trade,
-      status: 'open',
-    }).sort({ createdAt: -1 });
-
-    return NextResponse.json(jobs, { status: 200 });
+    return NextResponse.json(workerJobs);
   } catch (error) {
-    console.error('Error fetching worker jobs:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error in worker jobs route:', error);
+    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   }
 }

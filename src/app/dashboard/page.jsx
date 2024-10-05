@@ -7,37 +7,42 @@ import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
   const { user, isClient, isWorker, loading, isAuthenticated } = useAuth();
-  const [recentJobs, setRecentJobs] = useState([]);
-
+  const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      console.log('Fetching dashboard data. isAuthenticated:', isAuthenticated, 'isClient:', isClient);
+      console.log('Fetching dashboard data. isAuthenticated:', isAuthenticated, 'isClient:', isClient, 'isWorker:', isWorker);
       console.log('User:', user);
-      console.log('Token in localStorage:', localStorage.getItem('token'));
-      if (isAuthenticated && isClient) {
+      if (isAuthenticated) {
         setIsLoading(true);
         try {
-          console.log('Fetching client jobs');
-          const jobsResponse = await fetch('/api/jobs/client-jobs', {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-          console.log('Client jobs response:', jobsResponse);
+          let jobsResponse;
+          if (isClient) {
+            console.log('Fetching client jobs');
+            jobsResponse = await fetch('/api/jobs/client-jobs', {
+              credentials: 'include' // This ensures cookies are sent with the request
+            });
+          } else if (isWorker) {
+            console.log('Fetching worker jobs');
+            jobsResponse = await fetch('/api/jobs/worker-jobs', {
+              credentials: 'include' // This ensures cookies are sent with the request
+            });
+          }
+
+          console.log('Jobs response:', jobsResponse);
           if (!jobsResponse.ok) {
             const errorData = await jobsResponse.json();
             console.error('Error response:', errorData);
-            throw new Error(`Failed to fetch client jobs: ${errorData.error}`);
+            throw new Error(`Failed to fetch jobs: ${errorData.error}`);
           }
           const jobsData = await jobsResponse.json();
           console.log('Fetched jobsData:', jobsData);
-          setRecentJobs(jobsData || []);
+          setJobs(jobsData || []);
         } catch (error) {
           console.error('Error fetching dashboard data:', error);
-          setRecentJobs([]);
+          setJobs([]);
         } finally {
           setIsLoading(false);
         }
@@ -45,10 +50,9 @@ export default function Dashboard() {
     };
 
     fetchDashboardData();
-  }, [isAuthenticated, isClient, user]);
+  }, [isAuthenticated, isClient, isWorker, user]);
 
-  // Adăugați acest console.log pentru a verifica starea recentJobs
-  console.log('Current recentJobs:', recentJobs);
+  console.log('Current jobs:', jobs);
 
   const handleApply = async (jobId) => {
     try {
@@ -57,16 +61,17 @@ export default function Dashboard() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include' // This ensures cookies are sent with the request
       });
 
       if (response.ok) {
         const result = await response.json();
         alert(result.message || 'Applied successfully!');
-        setRecentJobs(prevJobs => prevJobs.map(job => 
+        setJobs(prevJobs => prevJobs.map(job => 
           job._id === jobId ? { ...job, hasApplied: true } : job
         ));
 
-        // Creează o notificare pentru client
+        // Create a notification for the client
         await fetch('/api/notifications/create', {
           method: 'POST',
           headers: {
@@ -79,6 +84,7 @@ export default function Dashboard() {
             type: 'newApplication',
             relatedJob: jobId,
           }),
+          credentials: 'include' // This ensures cookies are sent with the request
         });
       } else {
         const errorData = await response.json();
@@ -113,42 +119,22 @@ export default function Dashboard() {
           </div>
         )}
 
-        {isClient && (
-          <div className="col-span-1 md:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Your Posted Jobs</h2>
-            {recentJobs.length > 0 ? (
-              <ul className="space-y-4">
-                {recentJobs.map(job => (
-                  <li key={job._id} className="bg-white p-4 rounded shadow">
-                    <Link href={`/jobs/${job._id}`} className="text-blue-500 hover:underline text-lg font-semibold">
-                      {job.title}
-                    </Link>
-                    <p className="text-gray-600">Status: {job.status}</p>
-                    <p className="text-gray-600">Trade Type: {job.tradeType}</p>
-                    <p className="text-gray-600">Job Type: {job.jobType}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No jobs posted yet.</p>
-            )}
-          </div>
-        )}
-
-        {isWorker && (
-          <div className="col-span-1 md:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Available Jobs for Your Trade</h2>
-            {recentJobs.length > 0 ? (
-              <ul className="space-y-4">
-                {recentJobs.map(job => (
-                  <li key={job._id} className="bg-white p-4 rounded shadow">
-                    <Link href={`/jobs/${job._id}`} className="text-blue-500 hover:underline text-lg font-semibold">
-                      {job.title}
-                    </Link>
-                    <p className="text-gray-600">Status: {job.status}</p>
-                    <p className="text-gray-600">Trade Type: {job.tradeType}</p>
-                    <p className="text-gray-600">Job Type: {job.jobType}</p>
-                    {job.hasApplied ? (
+        <div className="col-span-1 md:col-span-2">
+          <h2 className="text-xl font-semibold mb-4">
+            {isClient ? "Your Posted Jobs" : "Available Jobs for Your Trade"}
+          </h2>
+          {jobs.length > 0 ? (
+            <ul className="space-y-4">
+              {jobs.map(job => (
+                <li key={job._id} className="bg-white p-4 rounded shadow">
+                  <Link href={`/jobs/${job._id}`} className="text-blue-500 hover:underline text-lg font-semibold">
+                    {job.title}
+                  </Link>
+                  <p className="text-gray-600">Status: {job.status}</p>
+                  <p className="text-gray-600">Trade Type: {job.tradeType}</p>
+                  <p className="text-gray-600">Job Type: {job.jobType}</p>
+                  {isWorker && (
+                    job.hasApplied ? (
                       <span className="mt-2 inline-block bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded">
                         Applied
                       </span>
@@ -159,15 +145,15 @@ export default function Dashboard() {
                       >
                         Apply
                       </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No available jobs matching your trade.</p>
-            )}
-          </div>
-        )}
+                    )
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>{isClient ? "No jobs posted yet." : "No available jobs matching your trade."}</p>
+          )}
+        </div>
       </div>
     </div>
   );
