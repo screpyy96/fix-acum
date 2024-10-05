@@ -13,13 +13,18 @@ export default function JobDetails({ params }) {
 
   useEffect(() => {
     const fetchJob = async () => {
+      console.log('Fetching job with ID:', jobId);
       try {
         const response = await fetch(`/api/jobs/${jobId}`);
+        console.log('Response status:', response.status);
         if (response.ok) {
           const data = await response.json();
+          console.log('Job data:', data);
           setJob(data);
         } else {
-          setError('Job not found');
+          const errorData = await response.json();
+          console.error('Error response:', errorData);
+          setError(errorData.error || 'Job not found');
         }
       } catch (err) {
         console.error('Error fetching job:', err);
@@ -34,50 +39,47 @@ export default function JobDetails({ params }) {
     try {
       const response = await fetch(`/api/jobs/${jobId}/apply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+        credentials: 'include',
       });
+
+      const data = await response.json();
 
       if (response.ok) {
         alert('Applied to job successfully');
-        router.refresh(); // Reîncarcă pagina pentru a actualiza lista de aplicanți
+        router.refresh();
       } else {
-        const errorData = await response.json();
-        alert(errorData.error || 'Failed to apply to job');
+        console.error('Error applying to job:', data);
+        alert(data.error || 'Failed to apply to job');
       }
     } catch (err) {
       console.error('Error applying to job:', err);
-      alert('Something went wrong');
+      alert('Something went wrong: ' + err.message);
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!job) {
-    return <div>{error || 'Loading job details...'}</div>;
-  }
+  const hasApplied = job?.applicants?.some(applicant => applicant.workerId === user.id);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-4">{job.title}</h1>
-      <p className="mb-2"><strong>Description:</strong> {job.description}</p>
-      <p className="mb-2"><strong>Trade Type:</strong> {job.tradeType}</p>
-      <p className="mb-2"><strong>Job Type:</strong> {job.jobType}</p>
-      <p className="mb-2"><strong>Status:</strong> {job.status}</p>
-
-      {isAuthenticated && isWorker && (
-        <button
-          onClick={handleApply}
-          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          disabled={job.applicants.includes(user.id)}
-        >
-          {job.applicants.includes(user.id) ? 'Already Applied' : 'Apply to this Job'}
-        </button>
-      )}
-
-      {!isAuthenticated && (
-        <p className="mt-4 text-red-500">Please log in to apply to this job.</p>
+    <div>
+      {/* Arată detaliile jobului */}
+      {error && <p className="text-red-500">{error}</p>}
+      {job && (
+        <div>
+          <h1>{job.title}</h1>
+          <p>{job.description}</p>
+          {/* Alte detalii */}
+          <button
+            onClick={handleApply}
+            className={`mt-4 ${hasApplied ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-700'} text-white font-bold py-2 px-4 rounded`}
+            disabled={hasApplied}
+          >
+            {hasApplied ? 'Already Applied' : 'Apply to this Job'}
+          </button>
+        </div>
       )}
     </div>
   );

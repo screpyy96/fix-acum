@@ -4,7 +4,7 @@ const WorkerSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  trade: { type: String, required: true }, // Adăugat câmpul trade
+  trade: { type: String, required: true },
   experience: String,
   rating: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },

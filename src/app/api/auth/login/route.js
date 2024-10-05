@@ -4,6 +4,7 @@ import Worker from '@/models/Worker';
 import Client from '@/models/Client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { sign } from 'jsonwebtoken';
 
 const SECRET_KEY = process.env.JWT_SECRET;
 
@@ -35,7 +36,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 400 });
     }
 
-    const token = jwt.sign(
+    const token = sign(
       { 
         id: user._id, 
         email: user.email, 

@@ -6,9 +6,9 @@ const LogoutButton = () => {
   const { logout } = useAuth();
   const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
-    router.push('/'); // Redirectează utilizatorul la pagina de login după logout
+  const handleLogout = async () => {
+    await logout(); // Așteaptă finalizarea deconectării
+    router.push('/'); // Redirecționează utilizatorul la pagina de login
   };
 
   return (

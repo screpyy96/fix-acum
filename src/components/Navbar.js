@@ -116,7 +116,7 @@ export default function Navbar() {
         ) : (
           <>
             <Link href="/login" className="block py-2 px-4 text-sm hover:bg-green-500 hover:text-white transition duration-300">Log In</Link>
-            <Link href="/register" className="block py-2 px-4 text-sm hover:bg-green-500 hover:text-white transition duration-300">Sign Up</Link>
+            <Link href="/register/worker" className="block py-2 px-4 text-sm hover:bg-green-500 hover:text-white transition duration-300">Sign Up</Link>
           </>
         )}
       </div>

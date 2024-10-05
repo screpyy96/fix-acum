@@ -25,25 +25,20 @@ export async function getSession(req) {
   return { user: userData };
 }
 
-export async function getCurrentUser(req) {
-  console.log('Getting current user...');
-  let token = req.cookies.get('auth_token')?.value;
-  
-  // Verifică și header-ul de autorizare dacă cookie-ul nu există
-  if (!token) {
-    const authHeader = req.headers.get('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
-    }
-  }
+export async function getCurrentUser(request) {
+  const token = request.cookies.get('auth_token')?.value;
+  if (!token) return null;
 
-  console.log('Auth token:', token ? 'Present' : 'Missing');
-  if (!token) {
-    console.log('No auth token found');
+  try {
+    const decoded = verify(token, SECRET_KEY);
+    return {
+      id: decoded.id,
+      email: decoded.email,
+      name: decoded.name,
+      type: decoded.type, // Asigurați-vă că acest câmp există
+    };
+  } catch (error) {
+    console.error('Error verifying token:', error);
     return null;
   }
-
-  const userData = verifyToken(token);
-  console.log('User data from token:', userData);
-  return userData;
 }

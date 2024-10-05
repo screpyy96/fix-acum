@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-   
+
 const HeroForm = () => {
   const [formData, setFormData] = useState({
     tradeType: '',
@@ -26,15 +26,18 @@ const HeroForm = () => {
     { value: "maintenance", label: "Întreținere" }
   ];
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
-  
-   
-  };
+    console.log('Handling input change:', { name, value });
+    setFormData(prevData => {
+      const newData = {
+        ...prevData,
+        [name]: value,
+      };
+      console.log('Updated formData:', newData);
+      return newData;
+    });
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -2,128 +2,129 @@
 
 import { useEffect } from 'react';
 import { useForm } from '@/context/FormProvider';
-import Step1JobDetails from './steps/jobDetails';
-import Step2ContactInfo from './steps/contactInfo';
-import Step3ClientRegistration from './steps/registerClient';
-import Step4ReviewSubmit from './steps/reviewSubmit';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useAuth from '@/hooks/useAuth';
-import { v4 as uuidv4 } from 'uuid';
+import Step1JobDetails from './steps/jobDetails';
+import RegisterClient from './steps/registerClient';
 
 const MultiStepsForm = ({tradeType, jobType}) => {
-  const { step, formData, handleInputChange, nextStep } = useForm();
+  const { formData, setFormData, step, nextStep, prevStep } = useForm();
+  const [error, setError] = useState('');
   const router = useRouter();
-  const { login, isAuthenticated, user } = useAuth();
+  const { isAuthenticated, login } = useAuth();
 
-  useEffect(() => {
-    handleInputChange('clientId', uuidv4());
-    handleInputChange('jobDetails', { tradeType, jobType });
-  }, []);
+  const handleInputChange = (field, value) => {
+    setFormData(prevData => ({
+      ...prevData,
+      jobDetails: {
+        ...prevData.jobDetails,
+        [field]: value,
+      },
+    }));
+  };
 
-  const handleRegisterClient = async (e) => {
-   
+  const handleRegister = async (clientData) => {
     try {
-      const clientData = {
-        name: formData.clientData.name,
-        email: formData.clientData.email,
-        password: formData.clientData.password,
-        clientId: formData.clientId ? formData.clientId.toString() : uuidv4().toString(), // Asigură-te că clientId este un string
-      };
-
+      console.log('Sending registration data:', clientData);
       const response = await fetch('/api/auth/register-client', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(clientData),
+        body: JSON.stringify({
+          name: clientData.name,
+          email: clientData.email,
+          password: clientData.password
+        }),
       });
 
+      console.log('Registration response status:', response.status);
+      const result = await response.json();
+      console.log('Registration response:', result);
+
       if (response.ok) {
-        const userData = await response.json();
-        console.log('Client registered successfully:', userData);
-        nextStep();
+        console.log('Client înregistrat cu succes:', result);
+        
+        login({
+          token: result.token,
+          user: result.user
+        });
+
+        handleSubmit();
       } else {
-        const errorData = await response.json();
-        console.error('Error registering client:', errorData);
-        // Aici poți adăuga o notificare pentru utilizator cu detaliile erorii
+        console.error('Eroare la înregistrarea clientului:', result);
+        setError(result.error || 'A apărut o eroare la înregistrarea clientului.');
       }
     } catch (error) {
-      console.error('Error:', error);
-      // Aici poți adăuga o notificare generală de eroare pentru utilizator
+      console.error('Eroare la înregistrare:', error);
+      setError('A apărut o eroare la trimiterea datelor.');
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     try {
       const submitData = {
         job: {
-          title: formData.jobDetails.title || `${formData.jobDetails.tradeType} - ${formData.jobDetails.jobType}`,
-          description: formData.jobDetails.description || 'Fără descriere',
+          ...formData.jobDetails,
           tradeType: formData.jobDetails.tradeType,
           jobType: formData.jobDetails.jobType,
-        },
-        client: isAuthenticated ? {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        } : {
-          ...formData.clientData,
-          clientId: formData.clientId ? formData.clientId.toString() : uuidv4().toString(), // Asigură-te că clientId este un string
+          clientId: formData.clientId,
+          title: formData.jobDetails.title,
+          description: formData.jobDetails.description,
+          startTime: formData.jobDetails.startTime,
+          projectStage: formData.jobDetails.projectStage,
+          isAuthorized: formData.jobDetails.isAuthorized,
+          status: 'open', // Use a valid enum value
         },
       };
+      console.log('Submitting job data:', submitData);
 
       const response = await fetch('/api/jobs/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
         },
         body: JSON.stringify(submitData),
       });
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Job și client creați cu succes:', result);
-        if (!isAuthenticated) {
-          login({
-            token: result.token,
-            user: {
-              id: result.client.id,
-              name: result.client.name,
-              email: result.client.email,
-              type: 'client',
-            }
-          });
-          // Adăugați această linie pentru a stoca token-ul în localStorage
-          localStorage.setItem('token', result.token);
-        }
-        router.push('/dashboard');
+        console.log('Job created successfully:', result);
+        alert('Job created successfully!');
+        router.push('/dashboard/client');
       } else {
         const errorData = await response.json();
-        console.error('Eroare la crearea job-ului și a clientului:', errorData);
+        console.error('Error creating job:', errorData);
+        setError(errorData.error || 'Failed to create job.');
       }
     } catch (error) {
-      console.error('Eroare:', error);
+      console.error('Error submitting job:', error);
+      setError('An error occurred while submitting the job.');
     }
   };
 
-  console.log('Current form data:', formData);
-  console.log('Current step:', step);
-
   const renderStep = () => {
-    switch(step) {
-      case 1: return <Step1JobDetails />;
-      case 2: return <Step2ContactInfo />;
-      case 3: 
-        return isAuthenticated ? <Step4ReviewSubmit onSubmit={handleSubmit} /> : <Step3ClientRegistration onRegister={handleRegisterClient} />;
-      case 4: return <Step4ReviewSubmit onSubmit={handleSubmit} />;
-      default: return <div>Pas necunoscut</div>;
+    switch (step) {
+      case 1:
+        return <Step1JobDetails onInputChange={handleInputChange} />;
+      case 2:
+        return isAuthenticated ? (
+          <button onClick={handleSubmit} className="bg-blue-500 text-white px-4 py-2 rounded">
+            Creează Job
+          </button>
+        ) : (
+          <RegisterClient onRegister={handleRegister} />
+        );
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-6">Crează un Job</h2>
+    <div className="max-w-md mx-auto mt-10">
+      {error && <div className="text-red-500 mb-4">{error}</div>}
       {renderStep()}
     </div>
   );

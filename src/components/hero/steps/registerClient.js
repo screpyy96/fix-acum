@@ -5,18 +5,23 @@ const RegisterClient = ({ onRegister }) => {
   const { formData, handleInputChange, prevStep } = useForm();
   const [passwordError, setPasswordError] = useState('');
 
-  const handleChange = (e) => {
-    handleInputChange('clientData', { [e.target.name]: e.target.value });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.clientData.password !== formData.clientData.confirmPassword) {
       setPasswordError('Parolele nu se potrivesc');
       return;
     }
+    if (!formData.clientData.name || !formData.clientData.email || !formData.clientData.password) {
+      setPasswordError('Toate câmpurile sunt obligatorii');
+      return;
+    }
     setPasswordError('');
-    onRegister(); // Asigură-te că onRegister trimite datele corecte
+    onRegister(formData.clientData);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    handleInputChange('clientData', name, value); // Correctly update clientData
   };
 
   return (

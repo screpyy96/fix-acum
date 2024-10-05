@@ -16,13 +16,6 @@ export default function useAuth() {
   const isAuthenticated = !!user; // Simplificat
   const userType = user ? user.type : null;
 
-  useEffect(() => {
-    console.log('useAuth effect running');
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('isClient:', user?.type === 'client');
-    console.log('user:', user);
-    console.log('token in localStorage:', localStorage.getItem('token'));
-  }, [user, isAuthenticated]);
 
   return { 
     user, 

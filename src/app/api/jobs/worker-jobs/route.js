@@ -5,25 +5,22 @@ import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request) {
   try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (user.type !== 'worker') {
-      return NextResponse.json({ error: 'Unauthorized - Not a worker' }, { status: 401 });
-    }
-
     await connectToDatabase();
-    
-    // Fetch jobs that match the worker's trade and are still open
-    const workerJobs = await Job.find({ 
-      tradeType: user.trade,
-      status: 'open'
-    }).sort({ createdAt: -1 }).limit(10);
+    const user = await getCurrentUser(request);
 
-    return NextResponse.json(workerJobs);
+    if (!user || user.type !== 'worker') {
+      console.log('Worker not found or not authorized');
+      return NextResponse.json({ error: 'Worker not found or not authorized' }, { status: 401 });
+    }
+console.log('Worker:', user);
+console.log('User trade:', user.trade);
+    // Fetch jobs that match the worker's trade type
+    const jobs = await Job.find({ tradeType: { $exists: true }, status: 'open' });
+
+    console.log('Jobs found for worker:', jobs.length);
+    return NextResponse.json(jobs);
   } catch (error) {
-    console.error('Error in worker jobs route:', error);
+    console.error('Error fetching jobs for worker:', error);
     return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   }
 }
