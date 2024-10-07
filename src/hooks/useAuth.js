@@ -11,7 +11,7 @@ export default function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
 
-  const { user, loading, login, logout } = context;
+  const { user, loading, login, logout, updateUser } = context;
   
   const isAuthenticated = !!user; // Simplificat
   const userType = user ? user.type : null;
@@ -22,6 +22,7 @@ export default function useAuth() {
     loading, 
     login,
     logout,
+    updateUser,
     isAuthenticated,
     userType,
     isClient: user?.type === 'client',

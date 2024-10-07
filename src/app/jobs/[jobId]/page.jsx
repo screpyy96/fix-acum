@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import useAuth from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function JobDetails({ params }) {
   const { jobId } = params;
-  const { user, isWorker, isAuthenticated, loading } = useAuth();
+
   const [job, setJob] = useState(null);
   const [error, setError] = useState('');
-  const router = useRouter();
+  const [hasApplied, setHasApplied] = useState(false); // Added state to manage application status
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -18,6 +18,9 @@ export default function JobDetails({ params }) {
         if (response.ok) {
           const data = await response.json();
           setJob(data);
+          // Check if the user has already applied to the job
+          const hasApplied = data.applicants.some(applicant => applicant.workerId === applicant.workerId);
+          setHasApplied(hasApplied);
         } else {
           const errorData = await response.json();
           setError(errorData.error || 'Job not found');
@@ -41,21 +44,17 @@ export default function JobDetails({ params }) {
         credentials: 'include',
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        alert('Applied to job successfully');
-        router.refresh();
+        setHasApplied(true); // Update the application status
+        toast.success('Applied to job successfully');
       } else {
-        alert(data.error || 'Failed to apply to job');
+        toast.error('Failed to apply to job');
       }
     } catch (err) {
-      alert('Something went wrong: ' + err.message);
+      toast.error('Something went wrong: ' + err.message);
     }
   };
 
-  const hasApplied = job?.applicants?.some(applicant => applicant.workerId === applicant.workerId);
-console.log(hasApplied)
   return (
     <div className="max-w-4xl mx-auto p-4">
       {/* Error message */}
@@ -105,6 +104,8 @@ console.log(hasApplied)
           </div>
         </div>
       )}
+
+      <ToastContainer /> {/* Toastify container for notifications */}
     </div>
   );
 }

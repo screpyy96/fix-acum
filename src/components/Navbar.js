@@ -11,6 +11,7 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  
   useEffect(() => {
     // No need for separate userName state; use user directly
   }, [user]);
@@ -34,6 +35,14 @@ export default function Navbar() {
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleDashboardRedirect = () => {
+    if (user._id) {
+      window.location.href = '/dashboard/client';
+    } else if (user.workerID ) {
+      window.location.href = '/dashboard/worker';
+    }
   };
 
   if (loading) {
@@ -68,8 +77,8 @@ export default function Navbar() {
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
                     
-                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</Link>
-                    <Link href="/setari" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Setari</Link>
+                    <button onClick={handleDashboardRedirect} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</button>
+                    <Link href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Setari</Link>
                     <LogoutButton onLogout={logout} />
                   </div>
                 )}
@@ -102,7 +111,7 @@ export default function Navbar() {
         <Link href="/workers" className="block py-2 px-4 text-sm hover:bg-green-500 hover:text-white transition duration-300">Muncitori</Link>
         {user ? (
           <>
-            <Link href="/dashboard" className="block py-2 px-4 text-sm hover:bg-green-500 hover:text-white transition duration-300">Dashboard</Link>
+            <button onClick={handleDashboardRedirect} className="block py-2 px-4 text-sm hover:bg-green-500 hover:text-white transition duration-300">Dashboard</button>
             
             <LogoutButton onLogout={logout} />
           </>

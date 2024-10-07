@@ -1,24 +1,29 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import useAuth from '@/hooks/useAuth';
 
-export default function DashboardRedirect() {
-  const { isClient, isWorker, loading } = useAuth();
+export default function Dashboard() {
+  const { isAuthenticated, isLoading, isClient, isWorker } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    } else if (!isLoading) {
       if (isClient) {
         router.push('/dashboard/client');
       } else if (isWorker) {
         router.push('/dashboard/worker');
-      } else {
-        router.push('/login');
       }
     }
-  }, [isClient, isWorker, loading, router]);
+  }, [isAuthenticated, isLoading, isClient, isWorker, router]);
 
-  return <div>Redirecting...</div>;
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  // Acest return nu ar trebui să fie niciodată atins datorită redirectărilor de mai sus
+  return null;
 }

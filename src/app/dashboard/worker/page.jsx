@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import useAuth from '@/hooks/useAuth';
 import Link from 'next/link';
-import { FaUserCircle, FaBriefcase, FaBuilding, FaStar, FaImages, FaCog } from 'react-icons/fa';
+import { FaUserCircle, FaBriefcase, FaBuilding, FaStar, FaImages, FaCog, FaCheckCircle } from 'react-icons/fa';
 import CompanyDescription from '@/components/worker/CompanyDescription';
 import Reviews from '@/components/worker/Reviews';
 import Portfolio from '@/components/worker/Portfolio';
@@ -11,7 +11,7 @@ import Settings from '@/components/worker/Settings';
 
 export default function WorkerDashboard() {
   const { user, loading } = useAuth();
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState({ newJobs: [], appliedJobs: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -24,7 +24,34 @@ export default function WorkerDashboard() {
           });
           if (response.ok) {
             const data = await response.json();
-            setJobs(data);
+            console.log('Jobs data received:', data);
+            
+            // Filtrează joburile după tradeType și apoi separă-le în noi și aplicate
+            const relevantJobs = data.filter(job => job.tradeType === user.trade);
+            
+            const newJobs = [];
+            const appliedJobs = [];
+            
+            relevantJobs.forEach(job => {
+              const hasApplied = job.applicants.some(applicant => 
+                applicant.workerId === user.id && applicant.appliedAt
+              );
+
+              console.log(user)
+              
+              if (hasApplied) {
+                appliedJobs.push(job);
+              } else {
+                newJobs.push(job);
+              }
+            });
+            
+            setJobs({
+              newJobs: newJobs,
+              appliedJobs: appliedJobs
+            });
+            
+            console.log('Filtered and separated jobs:', { newJobs, appliedJobs });
           } else {
             console.error('Failed to fetch jobs:', response.statusText);
           }
@@ -41,9 +68,37 @@ export default function WorkerDashboard() {
 
   if (loading || isLoading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
 
-  const filteredJobs = jobs.filter(job => job.tradeType === user.trade);
+  const renderJobList = (jobList, isApplied) => {
+    console.log(`Rendering job list. Is applied: ${isApplied}. Job count: ${jobList?.length}`);
+    if (!jobList || jobList.length === 0) {
+      return <p className="text-center text-gray-600 mt-4">No jobs to display.</p>;
+    }
+    return (
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {jobList.map(job => (
+          <div key={job._id.toString()} className="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div className={`p-4 ${isApplied ? 'bg-green-100' : 'bg-blue-100'}`}>
+              <h3 className="text-xl font-semibold text-blue-800">{job.title}</h3>
+              {isApplied && <FaCheckCircle className="text-green-500 float-right" />}
+            </div>
+            <div className="p-4">
+              <p className="mb-2"><strong>Trade Type:</strong> {job.tradeType}</p>
+              <p className="mb-2"><strong>Job Type:</strong> {job.jobType}</p>
+              <p className="mb-2"><strong>Description:</strong> {job.description}</p>
+              <p className="mb-2"><strong>Project Stage:</strong> {job.projectStage}</p>
+              <p className="mb-4"><strong>Status:</strong> {job.status}</p>
+              <Link href={`/jobs/${job._id.toString()}`} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300">
+                {isApplied ? 'View Application' : 'View Details'}
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const renderContent = () => {
+    console.log('Rendering content. Current jobs state:', jobs);
     switch (activeTab) {
       case 'dashboard':
         return (
@@ -63,31 +118,17 @@ export default function WorkerDashboard() {
                 <p className="text-red-500">Please complete your profile in the Settings tab.</p>
               )}
             </div>
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4 flex items-center">
+                <FaBriefcase className="mr-2 text-blue-500" /> New Available Jobs
+              </h2>
+              {renderJobList(jobs.newJobs, false)}
+            </div>
             <div>
               <h2 className="text-2xl font-semibold mb-4 flex items-center">
-                <FaBriefcase className="mr-2 text-blue-500" /> Available Jobs
+                <FaCheckCircle className="mr-2 text-green-500" /> Jobs You've Applied To
               </h2>
-              {filteredJobs.length > 0 ? (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredJobs.map(job => (
-                    <div key={job._id.toString()} className="bg-white shadow-lg rounded-lg overflow-hidden">
-                      <div className="bg-blue-100 p-4">
-                        <h3 className="text-xl font-semibold text-blue-800">{job.title}</h3>
-                      </div>
-                      <div className="p-4">
-                        <p className="mb-2"><strong>Trade Type:</strong> {job.tradeType}</p>
-                        <p className="mb-2"><strong>Job Type:</strong> {job.jobType}</p>
-                        <p className="mb-4"><strong>Status:</strong> {job.status}</p>
-                        <Link href={`/jobs/${job._id.toString()}`} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300">
-                          View Details
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-gray-600 mt-4">No available jobs matching your trade.</p>
-              )}
+              {renderJobList(jobs.appliedJobs, true)}
             </div>
           </div>
         );

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useReducer, useContext, useEffect, useState } from 'react';
-import {jwtDecode} from 'jwt-decode'; // Corect importul
+import { jwtDecode } from 'jwt-decode';
 
 export const AuthContext = createContext();
 
@@ -48,7 +48,6 @@ const authReducer = (state, action) => {
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -63,10 +62,27 @@ export function AuthProvider({ children }) {
             localStorage.removeItem('token');
             dispatch({ type: 'LOGOUT' });
           } else {
-            dispatch({
-              type: 'LOGIN',
-              payload: { user: decoded, token },
+            // Verifică dacă există date actualizate în baza de date
+            const response = await fetch('/api/settings/client', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
             });
+            if (response.ok) {
+              const { client, token: newToken } = await response.json();
+              if (newToken) {
+                localStorage.setItem('token', newToken);
+              }
+              dispatch({
+                type: 'LOGIN',
+                payload: { user: client, token: newToken || token },
+              });
+            } else {
+              dispatch({
+                type: 'LOGIN',
+                payload: { user: decoded, token },
+              });
+            }
           }
         } catch (error) {
           console.error('Error decoding token:', error);
@@ -76,15 +92,13 @@ export function AuthProvider({ children }) {
       } else {
         dispatch({ type: 'LOGOUT' });
       }
-      setIsInitialized(true);
+      dispatch({ type: 'SET_LOADING', payload: false });
     };
 
     initializeAuth();
   }, []);
 
   const login = ({ token, user }) => {
-    console.log('Logging in with token:', token);
-    console.log('User data:', user);
     localStorage.setItem('token', token);
     dispatch({
       type: 'LOGIN',
@@ -93,17 +107,50 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    console.log('Logging out');
     localStorage.removeItem('token');
     dispatch({ type: 'LOGOUT' });
   };
 
-  if (!isInitialized) {
-    return <div>Loading...</div>; // sau un component de loading
-  }
+  const updateUser = async (updateData) => {
+    try {
+      const response = await fetch('/api/settings/client', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user');
+      }
+
+      const { client, token } = await response.json();
+      
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+
+      dispatch({
+        type: 'LOGIN',
+        payload: { user: client, token },
+      });
+
+      return client;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ 
+      ...state, 
+      login, 
+      logout, 
+      updateUser 
+    }}>
       {children}
     </AuthContext.Provider>
   );
