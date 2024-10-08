@@ -18,7 +18,9 @@ const JobSchema = new mongoose.Schema({
   isAuthorized: { type: Boolean, required: true, default: false },
   status: { type: String, enum: ["open", "in-progress", "completed", "closed"], default: "open" },
   applicants: [{
-    workerId: { type: String, ref: 'Worker', required: true }, // Modificat la String
+    _id: { type: mongoose.Schema.Types.ObjectId, ref: 'Worker', required: true },
+    name: { type: String, required: true },
+    status: { type: String, enum: ['pending', 'accepted'], default: 'pending' },
     appliedAt: { type: Date, default: Date.now }
   }],
   createdAt: { type: Date, default: Date.now },

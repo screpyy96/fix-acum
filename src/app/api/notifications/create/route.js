@@ -1,26 +1,21 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Notification from '@/models/Notification';
+import { getCurrentUser } from '@/lib/auth';
 
-export async function POST(request) {
+export async function GET(request) {
   try {
-    const { recipient, recipientModel, message, type, relatedJob } = await request.json();
-    
     await connectToDatabase();
-    
-    const newNotification = new Notification({
-      recipient,
-      recipientModel,
-      message,
-      type,
-      relatedJob,
-    });
+    const user = await getCurrentUser(request);
 
-    await newNotification.save();
+    if (!user || user.type !== 'worker') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    return NextResponse.json({ message: 'Notification created successfully' }, { status: 201 });
+    const notifications = await Notification.find({ userId: user.id }).sort({ createdAt: -1 });
+    return NextResponse.json(notifications);
   } catch (error) {
-    console.error('Error creating notification:', error);
-    return NextResponse.json({ error: 'Error creating notification' }, { status: 500 });
+    console.error('Error fetching notifications:', error);
+    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   }
 }

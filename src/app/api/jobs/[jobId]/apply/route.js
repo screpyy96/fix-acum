@@ -3,7 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Job from '@/models/Job';
 import Worker from '@/models/Worker';
 import { getCurrentUser } from '@/lib/auth';
-import mongoose from 'mongoose';
+
 
 export async function POST(request, { params }) {
   const { jobId } = params;

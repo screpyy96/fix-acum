@@ -40,7 +40,7 @@ export default function Navbar() {
   const handleDashboardRedirect = () => {
     if (user._id) {
       window.location.href = '/dashboard/client';
-    } else if (user.workerID ) {
+    } else if (user.trade ) {
       window.location.href = '/dashboard/worker';
     }
   };

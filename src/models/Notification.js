@@ -1,12 +1,9 @@
 import mongoose from 'mongoose';
 
 const NotificationSchema = new mongoose.Schema({
-  recipient: { type: mongoose.Schema.Types.ObjectId, refPath: 'recipientModel' },
-  recipientModel: { type: String, enum: ['Worker', 'Client'] },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Worker', required: true },
   message: { type: String, required: true },
-  type: { type: String, required: true },
-  read: { type: Boolean, default: false },
-  relatedJob: { type: mongoose.Schema.Types.ObjectId, ref: 'Job' },
+  isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 

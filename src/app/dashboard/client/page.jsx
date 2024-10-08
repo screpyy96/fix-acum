@@ -21,7 +21,7 @@ export default function ClientDashboard() {
           });
           if (response.ok) {
             const data = await response.json();
-            setJobs(data);
+            setJobs(data); // Asigură-te că datele sunt corecte
           } else {
             console.error('Failed to fetch jobs:', response.statusText);
           }
@@ -78,6 +78,38 @@ export default function ClientDashboard() {
     }
   };
 
+  const handleAcceptWorker = async (workerId, jobId) => {
+    console.log('Accepting worker with ID:', workerId); // Log pentru a verifica ID-ul
+  
+    try {
+      const response = await fetch(`/api/jobs/${jobId}/accept-worker`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+        body: JSON.stringify({ workerId }),
+      });
+  
+      if (response.ok) {
+        const updatedJob = await response.json();
+  
+        // Actualizează statusul jobului în lista de joburi instantaneu în UI
+        setJobs(prevJobs => prevJobs.map(job => 
+          job._id === jobId ? { ...job, status: 'worker accepted', selectedWorkerId: workerId } : job
+        ));
+        
+        console.log('Worker accepted:', updatedJob);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to accept worker:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Error accepting worker:', error);
+    }
+  };
+  
+
   if (loading || isLoading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
 
   return (
@@ -115,17 +147,31 @@ export default function ClientDashboard() {
                       <p className="flex items-center mb-2"><FaClock className="mr-2 text-gray-600" /> <strong>Status:</strong> {job.status}</p>
                       <p className="mb-4"><strong>Applicants:</strong> {job.applicants.length}</p>
                       {job.applicants.length > 0 && (
-                        <div className="mb-4">
-                          <h4 className="font-semibold mb-2">Applicant Details:</h4>
-                          <ul className="list-disc list-inside">
-                            {job.applicants.map(applicant => (
-                              <li key={applicant._id}>
-                                <Link href={`/workers/${applicant._id}`} className="text-blue-500 hover:underline">{applicant.name}</Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+  <div className="mb-4">
+    <h4 className="font-semibold mb-2">Applicant Details:</h4>
+    <ul className="list-disc list-inside">
+      {job.applicants.map(applicant => (
+        <li key={applicant._id}>
+          <Link href={`/workers/${applicant.workerId}`} className="text-blue-500 hover:underline">
+            {applicant.name}
+          </Link>
+          {job.selectedWorkerId === applicant._id ? (
+            <span className="ml-2 text-green-500 font-semibold">Accepted</span>
+          ) : (
+            <button
+              onClick={() => handleAcceptWorker(applicant._id, job._id)}
+              className="bg-green-500 text-white px-2 py-1 rounded ml-2"
+              disabled={!!job.selectedWorkerId} // Dezactivează butonul dacă un worker a fost deja acceptat
+            >
+              Accept
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
+
                       <div className="flex justify-between mt-4">
                         <Link href={`/edit-job/${job._id}`} className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition duration-300 flex items-center">
                           <FaEdit className="mr-1" /> Edit

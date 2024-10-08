@@ -8,6 +8,7 @@ import CompanyDescription from '@/components/worker/CompanyDescription';
 import Reviews from '@/components/worker/Reviews';
 import Portfolio from '@/components/worker/Portfolio';
 import Settings from '@/components/worker/Settings';
+import Notifications from '@/components/notifications/notifications';
 
 export default function WorkerDashboard() {
   const { user, loading } = useAuth();
@@ -105,6 +106,7 @@ export default function WorkerDashboard() {
           <div>
             <h1 className="text-3xl font-bold mb-6 text-blue-600">Worker Dashboard</h1>
             <div className="bg-white shadow-lg rounded-lg p-6 mb-8">
+              <Notifications /> {/* Afișează notificările */}
               <h2 className="text-2xl font-semibold mb-4 flex items-center">
                 <FaUserCircle className="mr-2 text-blue-500" /> Your Information
               </h2>
