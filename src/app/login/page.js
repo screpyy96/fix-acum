@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useAuth from '@/hooks/useAuth';
 
@@ -9,7 +9,19 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated, isClient, isWorker } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (isClient) {
+        router.push('/dashboard/client');
+      } else if (isWorker) {
+        router.push('/dashboard/worker');
+      } else {
+        router.push('/');
+      }
+    }
+  }, [isAuthenticated, isClient, isWorker, router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

@@ -1,7 +1,8 @@
 "use client"
 
-import React, { createContext, useReducer, useContext, useEffect, useState } from 'react';
+import React, { createContext, useReducer, useContext, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { useRouter } from 'next/navigation';
 
 export const AuthContext = createContext();
 
@@ -48,6 +49,7 @@ const authReducer = (state, action) => {
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const router = useRouter();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -56,33 +58,21 @@ export function AuthProvider({ children }) {
       if (token) {
         try {
           const decoded = jwtDecode(token);
-          const currentTime = Date.now() / 1000;
-          if (decoded.exp < currentTime) {
-            console.log('Token has expired');
+          if (decoded.exp < Date.now() / 1000) {
             localStorage.removeItem('token');
             dispatch({ type: 'LOGOUT' });
           } else {
-            // Verifică dacă există date actualizate în baza de date
-            const response = await fetch('/api/settings/client', {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
+            const user = {
+              id: decoded.id,
+              name: decoded.name,
+              email: decoded.email,
+              type: decoded.type,
+              trade: decoded.trade // Doar pentru worker
+            };
+            dispatch({
+              type: 'LOGIN',
+              payload: { user, token },
             });
-            if (response.ok) {
-              const { client, token: newToken } = await response.json();
-              if (newToken) {
-                localStorage.setItem('token', newToken);
-              }
-              dispatch({
-                type: 'LOGIN',
-                payload: { user: client, token: newToken || token },
-              });
-            } else {
-              dispatch({
-                type: 'LOGIN',
-                payload: { user: decoded, token },
-              });
-            }
           }
         } catch (error) {
           console.error('Error decoding token:', error);
@@ -90,7 +80,7 @@ export function AuthProvider({ children }) {
           dispatch({ type: 'LOGOUT' });
         }
       } else {
-        dispatch({ type: 'LOGOUT' });
+        loadUserFromStorage(); // Încercăm să încărcăm utilizatorul din localStorage
       }
       dispatch({ type: 'SET_LOADING', payload: false });
     };
@@ -109,15 +99,17 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem('token');
     dispatch({ type: 'LOGOUT' });
+    router.push('/');
   };
 
   const updateUser = async (updateData) => {
     try {
-      const response = await fetch('/api/settings/client', {
+      const settingsEndpoint = state.user.type === 'client' ? '/api/settings/client' : '/api/settings/worker';
+      const response = await fetch(settingsEndpoint, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${state.token}`
         },
         body: JSON.stringify(updateData),
       });
@@ -126,7 +118,8 @@ export function AuthProvider({ children }) {
         throw new Error('Failed to update user');
       }
 
-      const { client, token } = await response.json();
+      const { client, worker, token } = await response.json();
+      const updatedUser = client || worker;
       
       if (token) {
         localStorage.setItem('token', token);
@@ -134,22 +127,63 @@ export function AuthProvider({ children }) {
 
       dispatch({
         type: 'LOGIN',
-        payload: { user: client, token },
+        payload: { user: updatedUser, token },
       });
 
-      return client;
+      return updatedUser;
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
     }
   };
 
+  const fetchUserSettings = async () => {
+    if (state.user) {
+      try {
+        const settingsEndpoint = state.user.type === 'client' ? '/api/settings/client' : '/api/settings/worker';
+        const response = await fetch(settingsEndpoint, {
+          headers: {
+            'Authorization': `Bearer ${state.token}`
+          }
+        });
+        if (response.ok) {
+          return await response.json();
+        }
+        throw new Error('Failed to fetch user settings');
+      } catch (error) {
+        console.error('Error fetching user settings:', error);
+        throw error;
+      }
+    }
+  };
+
+  const loadUserFromStorage = () => {
+    const token = localStorage.getItem('token');
+    const userString = localStorage.getItem('user');
+    if (token && userString) {
+      try {
+        const user = JSON.parse(userString);
+        dispatch({
+          type: 'LOGIN',
+          payload: { user, token },
+        });
+      } catch (error) {
+        console.error('Error parsing user data from localStorage', error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    loadUserFromStorage();
+  }, []);
+
   return (
     <AuthContext.Provider value={{ 
       ...state, 
       login, 
       logout, 
-      updateUser 
+      updateUser,
+      fetchUserSettings
     }}>
       {children}
     </AuthContext.Provider>

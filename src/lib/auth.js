@@ -36,6 +36,7 @@ export async function getCurrentUser(request) {
       email: decoded.email,
       name: decoded.name,
       type: decoded.type, // Asigurați-vă că acest câmp există
+      ...(decoded.type === 'worker' ? { trade: decoded.trade } : {}),
     };
   } catch (error) {
     console.error('Error verifying token:', error);

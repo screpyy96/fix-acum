@@ -9,7 +9,12 @@ export async function POST(request, { params }) {
   const { jobId } = params;
   const { workerId } = await request.json();
 
-  console.log('Received workerId:', workerId); // Log pentru a verifica ID-ul
+  console.log('Received jobId:', jobId);
+  console.log('Received workerId:', workerId);
+
+  if (!workerId) {
+    return NextResponse.json({ error: 'WorkerId is missing' }, { status: 400 });
+  }
 
   try {
     await connectToDatabase();  // Conectare la baza de date
@@ -24,14 +29,26 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
+    console.log('Job applicants:', job.applicants);
+
     // Verificăm dacă workerul a aplicat la job
-    const applicant = job.applicants.find(applicant => applicant.workerId === workerId);
+    const applicant = job.applicants.find(applicant => 
+      applicant.workerId.toString() === workerId
+    );
+
+    console.log('Found applicant:', applicant);
+
     if (!applicant) {
       return NextResponse.json({ error: 'Worker has not applied for this job' }, { status: 400 });
     }
 
+    if (applicant.status === 'accepted') {
+      return NextResponse.json({ error: 'Worker has already been accepted for this job' }, { status: 400 });
+    }
+
     // Verificăm dacă tradeType-ul workerului se potrivește cu cel al jobului
     const worker = await Worker.findById(workerId);
+
     if (!worker) {
       return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
     }
@@ -40,15 +57,15 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Worker trade does not match job requirements' }, { status: 400 });
     }
 
-    // Actualizează jobul pentru a accepta workerul
-    const updatedApplicants = job.applicants.map(applicant => 
-      applicant.workerId === workerId ? { ...applicant, accepted: true } : applicant
+    // Actualizăm statusul aplicantului și al jobului
+    const updatedApplicants = job.applicants.map(app => 
+      app.workerId.toString() === workerId ? { ...app, status: 'accepted' } : app
     );
+    
     job.applicants = updatedApplicants;
+    job.status = 'in-progress'; // Schimbăm statusul jobului
 
-    console.log('Before saving job:', job); // Log pentru a verifica jobul înainte de salvare
-
-    const savedJob = await job.save();  // Salvează modificările
+    const savedJob = await job.save();
 
     console.log('Saved job:', savedJob); // Verifică dacă jobul a fost salvat corect
 

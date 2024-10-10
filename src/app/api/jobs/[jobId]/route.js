@@ -8,7 +8,7 @@ export async function GET(request, { params }) {
 
   try {
     await connectToDatabase();
-    const job = await Job.findById(jobId).populate('applicants.workerId', 'name email trade');
+    const job = await Job.findById(jobId).populate('applicants._id', 'name email trade');
 
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });

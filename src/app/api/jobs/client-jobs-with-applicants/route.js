@@ -20,10 +20,17 @@ export async function GET(request) {
 
     // Populează informațiile despre aplicanți
     const jobsWithApplicants = await Promise.all(clientJobs.map(async (job) => {
-      const applicants = await Worker.find({ _id: { $in: job.applicants.map(applicant => applicant.workerId) } }, 'name email trade');
+      const applicants = await Worker.find(
+        { _id: { $in: job.applicants.map(applicant => applicant.workerId) } },
+        'name email trade'
+      );
       return {
         ...job.toObject(),
-        applicants: applicants // Adaugă informațiile despre aplicanți
+        applicants: job.applicants.map(applicant => ({
+          ...applicant.toObject(),
+          workerId: applicant.workerId.toString(), // Asigurați-vă că workerId este convertit la string
+          workerDetails: applicants.find(w => w._id.toString() === applicant.workerId.toString())
+        }))
       };
     }));
 

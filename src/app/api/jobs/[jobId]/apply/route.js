@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Job from '@/models/Job';
 import Worker from '@/models/Worker';
 import { getCurrentUser } from '@/lib/auth';
+import mongoose from 'mongoose';
 
 
 export async function POST(request, { params }) {
@@ -32,15 +33,12 @@ export async function POST(request, { params }) {
     }
 
     // Check if the worker has already applied to this job
-    if (job.applicants.some(applicant => applicant.workerId === worker._id.toString())) {
+    if (job.applicants.some(applicant => applicant.workerId.toString() === worker._id.toString())) {
       return NextResponse.json({ error: 'You have already applied to this job' }, { status: 400 });
     }
 
-    // Log înainte de adăugare
-    console.log('Adding applicant:', {
-      workerId: worker._id.toString(),
-      appliedAt: new Date()
-    });
+
+    
 
     // Add the worker to the list of applicants
     const updatedJob = await Job.findByIdAndUpdate(
@@ -48,13 +46,16 @@ export async function POST(request, { params }) {
       {
         $push: {
           applicants: {
-            workerId: worker._id.toString(), // Convertit la string
+            _id: new mongoose.Types.ObjectId(), // Generare manuală de ID
+            workerId: worker._id.toString(), 
+            name: worker.name, // Adaugă numele lucrătorului aici
             appliedAt: new Date()
           }
         }
       },
       { new: true, runValidators: true }
     );
+    
 
     if (!updatedJob) {
       return NextResponse.json({ error: 'Failed to update job' }, { status: 500 });

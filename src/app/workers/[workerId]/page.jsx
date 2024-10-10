@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from 'react';
-
 import { FaStar, FaTools, FaEnvelope, FaUser } from 'react-icons/fa';
 
 export default function WorkerProfile({ params }) {
@@ -55,7 +54,7 @@ export default function WorkerProfile({ params }) {
           </div>
           <div className="mb-6 flex items-center">
             <FaStar className="mr-2 text-yellow-400" />
-            <p className="text-gray-700">Rating: {worker.rating} / 5</p>
+            <p className="text-gray-700">Average Rating: {worker.averageRating} / 5</p> {/* Afișează rating-ul mediu */}
           </div>
           
           {worker.skills && worker.skills.length > 0 && (
@@ -89,6 +88,19 @@ export default function WorkerProfile({ params }) {
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-2">Availability</h2>
               <p className="text-gray-700">{worker.availability}</p>
+            </div>
+          )}
+
+          {/* Afișarea review-urilor */}
+          {worker.reviews && worker.reviews.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-2">Reviews</h2>
+              {worker.reviews.map((review, index) => (
+                <div key={index} className="border-t mt-2 pt-2">
+                  <p><strong>Review:</strong> {review.review}</p>
+                  <p><strong>Rating:</strong> {review.rating} / 5</p>
+                </div>
+              ))}
             </div>
           )}
         </div>
