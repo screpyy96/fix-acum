@@ -1,5 +1,5 @@
 import "./globals.css";
-import  {AuthProvider}  from '@/context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
       <body>
         <AuthProvider>
           <Navbar />
-          <main className="container mx-auto mt-4">
+          <main>
             {children}
             <SpeedInsights />
           </main>

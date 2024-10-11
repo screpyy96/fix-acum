@@ -24,7 +24,7 @@ export default function Navbar() {
       console.log(user?.role)
       router.push('/dashboard/client')
     } else if (user?.role === 'worker') {
-      router.push('/workers')
+      router.push('/dashboard/worker')
     }
     setIsDropdownOpen(false)
     setIsOpen(false)
