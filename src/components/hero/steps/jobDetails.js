@@ -17,8 +17,21 @@ const Step1JobDetails = () => {
       type: 'textarea',
     },
     {
-      id: 'startTime',
+      id: 'startDate',
       question: 'Când vrei să înceapă jobul?',
+      type: 'select',
+      options: [
+        { value: 'urgent', label: 'Urgent' },
+        { value: '2days', label: 'În 2 zile' },
+        { value: '1week', label: 'În 1 săptămână' },
+        { value: '2weeks', label: 'În 2 săptămâni' },
+        { value: '1month', label: 'În 1 lună' },
+        { value: 'flexible', label: 'Flexibil' },
+      ],
+    },
+    {
+      id: 'endDate',
+      question: 'Când vrei să se termine jobul?',
       type: 'select',
       options: [
         { value: 'urgent', label: 'Urgent' },
@@ -72,7 +85,7 @@ const Step1JobDetails = () => {
   };
 
   const handleAnswer = (answer) => {
-    const value = questions[currentQuestion].id === 'startTime' ? convertToDate(answer) : answer;
+    const value = questions[currentQuestion].id === 'startDate' || questions[currentQuestion].id === 'endDate' ? convertToDate(answer) : answer;
     handleInputChange('jobDetails', questions[currentQuestion].id, value);
     console.log('Updated formData:', formData);
   };

@@ -1,37 +1,45 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import Worker from '@/models/Worker';
-import Job from '@/models/Job';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request, { params }) {
   const { workerId } = params;
 
   try {
-    await connectToDatabase();
+    const { data: worker, error } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        reviews:reviews(*)
+      `)
+      .eq('id', workerId)
+      .single();
 
-    const worker = await Worker.findById(workerId);
+    if (error) throw error;
+
     if (!worker) {
       return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
     }
 
-    // Obține joburile completate ale lucrătorului
-    const completedJobs = await Job.find({ 'applicants.workerId': workerId, status: 'completed' });
+    // Calculează rating-ul mediu
+    const reviews = worker.reviews || [];
+    const averageRating = reviews.length > 0
+      ? reviews.reduce((acc, review) => acc + (review.rating || 0), 0) / reviews.length
+      : 0;
 
-    // Extrage review-urile din joburile completate
-    const reviews = completedJobs.flatMap(job => job.reviews);
+    // Formatează datele pentru a se potrivi cu structura așteptată de componenta de profil
+    const formattedWorker = {
+      ...worker,
+      averageRating,
+      completedJobs: worker.completed_jobs || 0,
+      availability: worker.availability || 'Not specified',
+      skills: worker.skills || [],
+      experience: worker.experience || 'Not specified',
+      reviews: reviews
+    };
 
-    // Calculează suma rating-urilor și numărul total de review-uri
-    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-    const averageRating = reviews.length > 0 ? (totalRating / reviews.length).toFixed(2) : 0;
-
-    return NextResponse.json({ 
-      ...worker.toObject(), 
-      completedJobs: completedJobs.length, 
-      reviews,
-      averageRating // Adaugă rating-ul mediu
-    });
+    return NextResponse.json(formattedWorker);
   } catch (error) {
     console.error('Error fetching worker profile:', error);
-    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

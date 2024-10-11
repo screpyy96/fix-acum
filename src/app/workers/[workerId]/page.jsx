@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react';
-import { FaStar, FaTools, FaEnvelope, FaUser } from 'react-icons/fa';
+import { FaStar, FaTools, FaEnvelope, FaUser, FaBriefcase, FaCalendarAlt, FaPhone } from 'react-icons/fa';
 
 export default function WorkerProfile({ params }) {
   const { workerId } = params;
@@ -38,27 +38,46 @@ export default function WorkerProfile({ params }) {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="bg-blue-600 text-white p-4">
-          <h1 className="text-3xl font-bold flex items-center">
-            <FaUser className="mr-2" /> {worker.name}
-          </h1>
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold flex items-center">
+              <FaUser className="mr-2" /> {worker.name}
+            </h1>
+            <div className="flex items-center">
+              <FaStar className="text-yellow-300 mr-1" />
+              <span className="text-xl font-semibold">{worker.averageRating.toFixed(1)}</span>
+            </div>
+          </div>
+          <p className="mt-2 flex items-center">
+            <FaTools className="mr-2" /> {worker.trade}
+          </p>
         </div>
         <div className="p-6">
-          <div className="mb-4 flex items-center">
-            <FaEnvelope className="mr-2 text-gray-600" />
-            <p className="text-gray-700">{worker.email}</p>
-          </div>
-          <div className="mb-4 flex items-center">
-            <FaTools className="mr-2 text-gray-600" />
-            <p className="text-gray-700 font-semibold">{worker.trade}</p>
-          </div>
-          <div className="mb-6 flex items-center">
-            <FaStar className="mr-2 text-yellow-400" />
-            <p className="text-gray-700">Average Rating: {worker.averageRating} / 5</p> {/* Afișează rating-ul mediu */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
+              <p className="flex items-center mb-2">
+                <FaEnvelope className="mr-2 text-gray-600" /> {worker.email}
+              </p>
+              {worker.phone && (
+                <p className="flex items-center mb-2">
+                  <FaPhone className="mr-2 text-gray-600" /> {worker.phone}
+                </p>
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Work Information</h2>
+              <p className="flex items-center mb-2">
+                <FaBriefcase className="mr-2 text-gray-600" /> {worker.completedJobs} jobs completed
+              </p>
+              <p className="flex items-center mb-2">
+                <FaCalendarAlt className="mr-2 text-gray-600" /> {worker.availability}
+              </p>
+            </div>
           </div>
           
           {worker.skills && worker.skills.length > 0 && (
-            <div className="mb-6">
+            <div className="mt-6">
               <h2 className="text-xl font-semibold mb-2">Skills</h2>
               <div className="flex flex-wrap">
                 {worker.skills.map((skill, index) => (
@@ -71,36 +90,30 @@ export default function WorkerProfile({ params }) {
           )}
           
           {worker.experience && (
-            <div className="mb-6">
+            <div className="mt-6">
               <h2 className="text-xl font-semibold mb-2">Experience</h2>
               <p className="text-gray-700">{worker.experience}</p>
             </div>
           )}
-          
-          {worker.completedJobs && worker.completedJobs > 0 && (
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2">Completed Jobs</h2>
-              <p className="text-gray-700">{worker.completedJobs} jobs completed successfully</p>
-            </div>
-          )}
-          
-          {worker.availability && (
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2">Availability</h2>
-              <p className="text-gray-700">{worker.availability}</p>
-            </div>
-          )}
 
-          {/* Afișarea review-urilor */}
           {worker.reviews && worker.reviews.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2">Reviews</h2>
-              {worker.reviews.map((review, index) => (
-                <div key={index} className="border-t mt-2 pt-2">
-                  <p><strong>Review:</strong> {review.review}</p>
-                  <p><strong>Rating:</strong> {review.rating} / 5</p>
-                </div>
-              ))}
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold mb-4">Reviews</h2>
+              <div className="space-y-4">
+                {worker.reviews.map((review, index) => (
+                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <div className="flex text-yellow-400 mr-2">
+                        {[...Array(5)].map((_, i) => (
+                          <FaStar key={i} className={i < review.rating ? "text-yellow-400" : "text-gray-300"} />
+                        ))}
+                      </div>
+                      <span className="text-gray-600">{review.rating.toFixed(1)} / 5</span>
+                    </div>
+                    <p className="text-gray-700">{review.review}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

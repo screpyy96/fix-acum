@@ -4,13 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { motion, useAnimation } from 'framer-motion'
 import { FaTools, FaSearch, FaStar } from 'react-icons/fa'
 import HeroForm from './heroForm'
-import { Canvas } from '@react-three/fiber'
-import { useGLTF, OrbitControls, Environment } from '@react-three/drei'
 
-const Model = () => {
-  const gltf = useGLTF('/hat.glb')
-  return <primitive object={gltf.scene} scale={2} position={[0, -1, 0]} />
-}
+
 
 const Hero = () => {
   const [scrollY, setScrollY] = useState(0)
@@ -82,11 +77,7 @@ const Hero = () => {
         </svg>
       </div>
       <div className="absolute top-10 right-10 w-64 h-64">
-        <Canvas>
-          <OrbitControls enableZoom={false} />
-          <Environment preset="sunset" />
-          <Model />
-        </Canvas>
+
       </div>
     </div>
   )

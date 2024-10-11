@@ -33,8 +33,7 @@ export default function RegisterWorker() {
 
   const onSubmit = async (data) => {
     try {
-      // Înregistrează utilizatorul cu Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -45,26 +44,22 @@ export default function RegisterWorker() {
           }
         }
       });
-
-      if (authError) throw authError;
-
-      // Creează profilul muncitorului în tabela 'profiles'
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          name: data.name,
-          role: 'worker',
-          trade: data.trade
-        });
-
-      if (profileError) throw profileError;
-
-      console.log('Registration successful');
+  
+      if (authError) {
+        if (authError.message.includes('User already registered')) {
+          setError('Acest email este deja înregistrat.');
+        } else {
+          setError(authError.message);
+        }
+        return;
+      }
+  
+      // Succes - redirecționăm către login sau o pagină de confirmare
+      console.log('Înregistrare reușită! Te rugăm să-ți verifici emailul pentru confirmare.');
       router.push('/login');
     } catch (error) {
-      console.error('Registration error:', error);
-      setError(error.message || 'A apărut o eroare la înregistrarea muncitorului.');
+      console.error('Eroare la înregistrare:', error);
+      setError('A apărut o eroare neașteptată. Te rugăm să încerci din nou.');
     }
   };
 

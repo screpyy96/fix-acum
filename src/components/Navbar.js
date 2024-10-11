@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Menu, X, ChevronDown, User, Settings, LogOut } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
+import useAuth from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
 export default function Navbar() {
-  const { session, isLoading } = useAuth()
+  const { user, loading } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isClient, setIsClient] = useState(false)
@@ -17,12 +17,11 @@ export default function Navbar() {
   useEffect(() => {
     setIsClient(true)
   }, [])
-console.log(session)
 
   const handleDashboardRedirect = () => {
-    if (session?.user?.role === 'client') {
+    if (user?.role === 'client') {
       router.push('/dashboard/client')
-    } else if (session?.user?.role === 'worker') {
+    } else if (user?.role === 'worker') {
       router.push('/dashboard/worker')
     }
     setIsDropdownOpen(false)
@@ -31,7 +30,7 @@ console.log(session)
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen)
 
   const renderAuthButtons = () => {
-    if (isLoading || !isClient) {
+    if (loading || !isClient) {
       return (
         <div className="flex space-x-4">
           <div className="w-16 h-8 bg-gray-200 animate-pulse rounded"></div>
@@ -40,14 +39,14 @@ console.log(session)
       )
     }
 
-    if (session) {
+    if (user) {
       return (
         <div className="relative">
           <button
             onClick={toggleDropdown}
             className="flex items-center space-x-1 text-gray-800 hover:text-gray-600 focus:outline-none"
           >
-            <span>Bine ai venit, {session.user.email}</span>
+            <span>Bine ai venit, {user.email}</span>
             <ChevronDown className="h-4 w-4" />
           </button>
           {isDropdownOpen && (
@@ -67,7 +66,11 @@ console.log(session)
                 Setari
               </button>
               <button
-                onClick={() => { supabase.auth.signOut(); setIsDropdownOpen(false); }}
+                onClick={async () => { 
+                  await supabase.auth.signOut(); 
+                  setIsDropdownOpen(false);
+                  router.push('/');
+                }}
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
               >
                 <LogOut className="inline-block mr-2 h-4 w-4" />
@@ -150,11 +153,11 @@ console.log(session)
             >
               Muncitori
             </Link>
-            {isLoading || !isClient ? (
+            {loading || !isClient ? (
               <div className="px-3 py-2">
                 <div className="w-24 h-8 bg-gray-200 animate-pulse rounded"></div>
               </div>
-            ) : session ? (
+            ) : user ? (
               <>
                 <button
                   onClick={() => { handleDashboardRedirect(); setIsOpen(false); }}
@@ -169,7 +172,11 @@ console.log(session)
                   Setari
                 </button>
                 <button
-                  onClick={() => { supabase.auth.signOut(); setIsOpen(false); }}
+                  onClick={async () => { 
+                    await supabase.auth.signOut(); 
+                    setIsOpen(false);
+                    router.push('/');
+                  }}
                   className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 >
                   Logout

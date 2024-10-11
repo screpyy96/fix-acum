@@ -16,9 +16,10 @@ export const FormProvider = ({ children, initialTradeType, initialJobType }) => 
       jobType: initialJobType || '',
       title: '',
       description: '',
-      startTime: '', // New field for question 1
-      projectStage: '', // New field for question 2
-      isAuthorized: '', // New field for question 3
+      startDate: '', // Modificat din startTime
+      endDate: '',   // Modificat din end_date
+      projectStage: '',
+      isAuthorized: '',
     },
     clientData: {
       name: '',

@@ -28,30 +28,19 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
 
   const handleRegister = async (clientData) => {
     try {
-      // Înregistrează utilizatorul cu Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email: clientData.email,
-        password: clientData.password,
-        options: {
-          data: {
-            name: clientData.name,
-            role: 'client'
-          }
-        }
+      const response = await fetch('/api/auth/register-client', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(clientData),
       });
 
-      if (error) throw error;
+      const data = await response.json();
 
-      // Creează profilul clientului în tabela 'profiles'
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          name: clientData.name,
-          role: 'client'
-        });
-
-      if (profileError) throw profileError;
+      if (!response.ok) {
+        throw new Error(data.error || 'A apărut o eroare la înregistrare.');
+      }
 
       // Autentifică utilizatorul nou creat
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -81,17 +70,23 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
           client_id: session.user.id,
           title: formData.jobDetails.title,
           description: formData.jobDetails.description,
-          trade_type: tradeType,
-          job_type: jobType,
+          tradeType: tradeType,
+          jobType: jobType,
           status: 'open',
           budget: formData.jobDetails.budget || null,
           location: formData.jobDetails.location || null,
-          start_date: formData.jobDetails.startDate || null,
-          end_date: formData.jobDetails.endDate || null
+          startDate: formData.jobDetails.startDate || null,
+          endDate: formData.jobDetails.endDate || null
         })
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Eroare la inserarea job-ului:', error)
+        // Gestionați eroarea aici
+      } else {
+        console.log('Job inserat cu succes:', data)
+        // Folosiți data aici, de exemplu pentru a actualiza starea sau UI-ul
+      }
 
       router.push('/dashboard/client');
     } catch (error) {

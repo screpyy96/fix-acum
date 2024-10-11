@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/hooks/useAuth';
 
-// Inițializează clientul Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
 
 export async function POST(request) {
   try {
     const { email, password } = await request.json();
 
-    // Autentificare utilizator cu Supabase Auth
     const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -21,7 +15,6 @@ export async function POST(request) {
 
     const userId = data.session.user.id;
 
-    // Obține informații suplimentare despre utilizator din tabela 'profiles'
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
@@ -30,7 +23,6 @@ export async function POST(request) {
 
     if (profileError) throw profileError;
 
-    // Redirecționează utilizatorul în funcție de rolul său
     let redirectPath = '/';
     if (profile.role === 'client') {
       redirectPath = '/dashboard/client';

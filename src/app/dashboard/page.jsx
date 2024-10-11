@@ -5,22 +5,29 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
-  const { isAuthenticated, isLoading, isClient, isWorker } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
-    } else if (!isLoading) {
-      if (isClient) {
-        router.push('/dashboard/client');
-      } else if (isWorker) {
-        router.push('/dashboard/worker');
+    if (!loading) {
+      if (!user) {
+        
+      } else {
+        const role = user.role || user.user_metadata?.role;
+        if (role === 'client') {
+          router.push('/dashboard/client');
+        } else if (role === 'worker') {
+          router.push('/dashboard/worker');
+        } else {
+          // În cazul în care rolul nu este recunoscut
+          console.error('Unrecognized user role:', role);
+          router.push('/');
+        }
       }
     }
-  }, [isAuthenticated, isLoading, isClient, isWorker, router]);
+  }, [user, loading, router]);
 
-  if (isLoading) {
+  if (loading) {
     return <div>Loading...</div>;
   }
 

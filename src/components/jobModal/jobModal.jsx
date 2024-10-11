@@ -1,81 +1,94 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function EditJobModal({ job, onClose, onUpdate }) {
-  const [editedJob, setEditedJob] = useState(job);
+  const [updatedJob, setUpdatedJob] = useState({
+    id: job.id,
+    title: job.title || '', // Setează un string gol dacă title este null/undefined
+    description: job.description || '',
+    budget: job.budget || 0, // Poți pune 0 sau altă valoare implicită
+  });
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onUpdate(updatedJob);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditedJob(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`/api/jobs/update/${job._id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editedJob),
-        credentials: 'include' // Adaugă această linie
-      });
-
-      if (response.ok) {
-        const updatedJob = await response.json();
-        onUpdate(updatedJob);
-      } else {
-        console.error('Failed to update job:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error updating job:', error);
-    }
+    setUpdatedJob(prev => ({ ...prev, [name]: value }));
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div className="mt-3 text-center">
           <h3 className="text-lg leading-6 font-medium text-gray-900">Edit Job</h3>
-          <form onSubmit={handleSubmit} className="mt-2">
-            <input
-              type="text"
-              name="title"
-              value={editedJob.title}
-              onChange={handleChange}
-              className="mt-2 p-2 w-full border rounded"
-              placeholder="Job Title"
-            />
-            <input
-              type="text"
-              name="tradeType"
-              value={editedJob.tradeType}
-              onChange={handleChange}
-              className="mt-2 p-2 w-full border rounded"
-              placeholder="Trade Type"
-            />
-            <input
-              type="text"
-              name="jobType"
-              value={editedJob.jobType}
-              onChange={handleChange}
-              className="mt-2 p-2 w-full border rounded"
-              placeholder="Job Type"
-            />
-            <div className="items-center px-4 py-3">
+          <form onSubmit={handleSubmit} className="mt-2 text-left">
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
+                Title
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="title"
+                type="text"
+                name="title"
+                value={updatedJob.title}
+                onChange={handleChange}
+                placeholder="Job Title"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+                Description
+              </label>
+              <textarea
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="description"
+                name="description"
+                value={updatedJob.description}
+                onChange={handleChange}
+                placeholder="Job Description"
+                rows="3"
+              ></textarea>
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="budget">
+                Budget
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="budget"
+                type="number"
+                name="budget"
+                value={updatedJob.budget}
+                onChange={handleChange}
+                placeholder="Budget"
+              />
+            </div>
+            <div className="flex items-center justify-between mt-4">
               <button
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 type="submit"
-                className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
               >
                 Update Job
               </button>
+              <button
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                type="button"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
             </div>
           </form>
-          <button
-            onClick={onClose}
-            className="mt-3 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
