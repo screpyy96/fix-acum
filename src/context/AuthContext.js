@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
 	const [session, setSession] = useState(null);
 	const [user, setUser] = useState(null);
 	const [loading, setLoading] = useState(true);
+	const [userRole, setUserRole] = useState(null);
 
 	useEffect(() => {
 		console.log('AuthProvider useEffect started');
@@ -30,6 +31,7 @@ export function AuthProvider({ children }) {
 							role: role || 'user', // Setăm un rol implicit dacă nu există
 							trade: trade || null 
 						});
+						fetchUserRole(session.user.id);
 					} else {
 						setUser(null);
 					}
@@ -57,6 +59,7 @@ export function AuthProvider({ children }) {
 						role: role || 'user',
 						trade: trade || null 
 					});
+					fetchUserRole(session.user.id);
 				} else {
 					setUser(null);
 				}
@@ -71,6 +74,17 @@ export function AuthProvider({ children }) {
 	}, []);
 
 	console.log('Current state:', { session, user, loading });
+
+	const fetchUserRole = async (userId) => {
+		const { data, error } = await supabase
+			.from('profiles')
+			.select('role')
+			.eq('id', userId)
+			.single();
+		if (data) {
+			setUserRole(data.role);
+		}
+	};
 
 	const value = {
 		session,
@@ -116,7 +130,10 @@ export function AuthProvider({ children }) {
 
 	return (
 		<AuthContext.Provider value={value}>
-			{loading ? <div>Loading...</div> : children}
+			{loading ? <div className="flex space-x-4">
+          <div className="w-16 h-8 bg-gray-200 animate-pulse rounded"></div>
+          <div className="w-16 h-8 bg-green-200 animate-pulse rounded"></div>
+        </div> : children}
 		</AuthContext.Provider>
 	);
 }

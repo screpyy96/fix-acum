@@ -1,6 +1,6 @@
-import React from 'react';
-import { FaEdit, FaTrash, FaUserCheck, FaUserCircle } from 'react-icons/fa';
-import Link from 'next/link';
+import React from 'react'
+import { FaEdit, FaTrash, FaUserCheck, FaUserCircle } from 'react-icons/fa'
+import Link from 'next/link'
 
 export default function JobList({ jobs, onEditJob, onDeleteJob, onAcceptWorker }) {
   return (
@@ -66,5 +66,5 @@ export default function JobList({ jobs, onEditJob, onDeleteJob, onAcceptWorker }
         </div>
       ))}
     </div>
-  );
+  )
 }

@@ -25,7 +25,18 @@ export default function Login() {
         // Forțăm o reîncărcare a sesiunii
         await supabase.auth.getSession();
         
-        switch (user.role) {
+        // Obținem rolul utilizatorului din tabelul profiles
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        const userRole = data?.role;
+
+        switch (userRole) {
           case 'client':
             router.push('/dashboard/client');
             break;
@@ -45,6 +56,7 @@ export default function Login() {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">

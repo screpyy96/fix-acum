@@ -6,7 +6,7 @@ import useAuth from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import JobList from '@/components/jobList/jobList'
 import EditJobModal from '@/components/jobModal/jobModal'
-import { FaPlus } from 'react-icons/fa'
+import { FaPlus, FaChartBar, FaUser, FaCheckCircle } from 'react-icons/fa'
 import Link from 'next/link'
 
 export default function ClientDashboard() {
@@ -15,33 +15,16 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editingJob, setEditingJob] = useState(null)
+  const [stats, setStats] = useState({ totalJobs: 0, activeJobs: 0, completedJobs: 0 })
   const router = useRouter()
 
   useEffect(() => {
     if (!user) {
       router.push('/login')
-    }
-  }, [user, router])
-
-  useEffect(() => {
-    if (user) {
+    } else {
       fetchClientData()
     }
-  }, [user])
-
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Session error:", error);
-      } else if (session) {
-        console.log("User is authenticated:", session.user);
-      } else {
-        console.log("No active session");
-      }
-    };
-    checkSession();
-  }, []);
+  }, [user, router])
 
   const fetchClientData = async () => {
     try {
@@ -60,14 +43,21 @@ export default function ClientDashboard() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      console.log('Fetched jobs data:', data) // Adaugă acest log
       setJobs(data)
+      updateStats(data)
     } catch (error) {
       console.error('Error fetching client data:', error)
       setError('Failed to load data')
     } finally {
       setLoading(false)
     }
+  }
+
+  const updateStats = (jobsData) => {
+    const totalJobs = jobsData.length
+    const activeJobs = jobsData.filter(job => job.status === 'in-progress').length
+    const completedJobs = jobsData.filter(job => job.status === 'completed').length
+    setStats({ totalJobs, activeJobs, completedJobs })
   }
 
   const handleEditJob = (job) => {
@@ -82,22 +72,18 @@ export default function ClientDashboard() {
           title: updatedJob.title,
           description: updatedJob.description,
           budget: updatedJob.budget
-          // Eliminăm updated_at de aici
         })
-        .eq('id', updatedJob.id);
+        .eq('id', updatedJob.id)
 
-      if (error) throw error;
+      if (error) throw error
 
-      // Actualizăm starea locală
-      setJobs(jobs.map(job => job.id === updatedJob.id ? { ...job, ...updatedJob } : job));
-      setEditingJob(null); // Închide modalul
-
-      console.log("Job updated successfully");
+      setJobs(jobs.map(job => job.id === updatedJob.id ? { ...job, ...updatedJob } : job))
+      setEditingJob(null)
+      fetchClientData() // Refresh data to update stats
     } catch (error) {
-      console.error('Error updating job:', error);
-      // Aici puteți adăuga logica pentru a afișa o eroare utilizatorului
+      console.error('Error updating job:', error)
     }
-  };
+  }
 
   const handleDeleteJob = async (jobId) => {
     try {
@@ -109,60 +95,74 @@ export default function ClientDashboard() {
       if (error) throw error
 
       setJobs(jobs.filter(job => job.id !== jobId))
+      fetchClientData() // Refresh data to update stats
     } catch (error) {
       console.error('Error deleting job:', error)
-      // Handle error (e.g., show error message to user)
     }
   }
 
   const handleAcceptWorker = async (jobId, workerId) => {
-    console.log(`Attempting to accept worker ${workerId} for job ${jobId}`);
     try {
-      // Actualizează statusul job-ului
-      const { data: jobData, error: jobError } = await supabase
+      await supabase
         .from('jobs')
         .update({ status: 'in-progress' })
         .eq('id', jobId)
-        .select()
 
-      if (jobError) throw jobError
-      console.log('Job status updated:', jobData);
-
-      // Actualizează statusul aplicației pentru job
-      const { data: applicationData, error: applicationError } = await supabase
+      await supabase
         .from('job_applications')
         .update({ status: 'accepted' })
         .eq('job_id', jobId)
         .eq('worker_id', workerId)
-        .select()
 
-      if (applicationError) throw applicationError
-      console.log('Application status updated:', applicationData);
-
-      // Reîmprospătează datele job-urilor
-      await fetchClientData()
-      console.log('Data refreshed');
+      fetchClientData() // Refresh data to update job statuses and stats
     } catch (error) {
       console.error('Error accepting worker:', error)
-      // Gestionează eroarea (ex: afișează un mesaj de eroare utilizatorului)
     }
   }
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error}</div>
+  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>
+  if (error) return <div className="text-red-500 text-center">Error: {error}</div>
 
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Welcome, {user?.name}</h1>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Welcome, {user?.name}</h1>
+            <p className="text-gray-600">Manage your projects and workers</p>
+          </div>
           <Link 
-            href="/"
+            href="/new-job"
             className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full flex items-center"
           >
             <FaPlus className="mr-2" /> New Job
           </Link>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="flex items-center">
+              <FaChartBar className="text-blue-500 mr-2" />
+              <h2 className="text-xl font-semibold">Total Jobs</h2>
+            </div>
+            <p className="text-3xl font-bold mt-2">{stats.totalJobs}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="flex items-center">
+              <FaUser className="text-green-500 mr-2" />
+              <h2 className="text-xl font-semibold">Active Jobs</h2>
+            </div>
+            <p className="text-3xl font-bold mt-2">{stats.activeJobs}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="flex items-center">
+              <FaCheckCircle className="text-purple-500 mr-2" />
+              <h2 className="text-xl font-semibold">Completed Jobs</h2>
+            </div>
+            <p className="text-3xl font-bold mt-2">{stats.completedJobs}</p>
+          </div>
+        </div>
+
         <JobList 
           jobs={jobs} 
           onEditJob={handleEditJob} 

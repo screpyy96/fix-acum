@@ -1,29 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 
 export default function EditJobModal({ job, onClose, onUpdate }) {
   const [updatedJob, setUpdatedJob] = useState({
     id: job.id,
-    title: job.title || '', // Setează un string gol dacă title este null/undefined
+    title: job.title || '',
     description: job.description || '',
-    budget: job.budget || 0, // Poți pune 0 sau altă valoare implicită
-  });
+    budget: job.budget || 0,
+  })
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
+      document.body.style.overflow = 'unset'
+    }
+  }, [])
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    onUpdate(updatedJob);
-  };
+    e.preventDefault()
+    onUpdate(updatedJob)
+  }
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setUpdatedJob(prev => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setUpdatedJob(prev => ({ ...prev, [name]: value }))
+  }
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -92,5 +92,5 @@ export default function EditJobModal({ job, onClose, onUpdate }) {
         </div>
       </div>
     </div>
-  );
+  )
 }
