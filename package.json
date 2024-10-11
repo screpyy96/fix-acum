@@ -16,9 +16,8 @@
     "@supabase/supabase-js": "^2.45.4",
     "@tailwindcss/forms": "^0.5.9",
     "@vercel/speed-insights": "^1.0.12",
-
     "framer-motion": "^11.11.7",
-
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.451.0",
     "mongoose": "^8.6.4",
     "next": "14.2.13",
