@@ -1,6 +1,7 @@
 import "./globals.css";
 import  {AuthProvider}  from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
+import { SpeedInsights } from 'next-speed-insights';
 
 export const metadata = {
   title: "Fix Acum",
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
           <Navbar />
           <main className="container mx-auto mt-4">
             {children}
+            <SpeedInsights />
           </main>
         </AuthProvider>
       </body>
