@@ -3,11 +3,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 const LogoutButton = () => {
-  const { logout } = useAuth();
+  const { signOut } = useAuth(); // Schimbăm logout cu signOut
   const router = useRouter();
 
   const handleLogout = async () => {
-    await logout(); // Așteaptă finalizarea deconectării
+    await signOut(); // Folosim signOut în loc de logout
     router.push('/'); // Redirecționează utilizatorul la pagina de login
   };
 

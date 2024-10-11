@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Menu, X, ChevronDown, User, Settings, LogOut } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/lib/supabase'
 
 export default function Navbar() {
-  const { user, loading, logout } = useAuth()
+  const { session, isLoading } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isClient, setIsClient] = useState(false)
@@ -16,22 +17,12 @@ export default function Navbar() {
   useEffect(() => {
     setIsClient(true)
   }, [])
-
-  useEffect(() => {
-    if (!loading && user) {
-      console.log('User detected:', user);
-      // Check if user object is complete
-      if (!user.type || !user.id || !user.email) {
-        console.error('Incomplete user object:', user);
-        logout(); // Force logout if user object is incomplete
-      }
-    }
-  }, [loading, user, logout])
+console.log(session)
 
   const handleDashboardRedirect = () => {
-    if (user?.type === 'client') {
+    if (session?.user?.role === 'client') {
       router.push('/dashboard/client')
-    } else if (user?.type === 'worker') {
+    } else if (session?.user?.role === 'worker') {
       router.push('/dashboard/worker')
     }
     setIsDropdownOpen(false)
@@ -40,7 +31,7 @@ export default function Navbar() {
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen)
 
   const renderAuthButtons = () => {
-    if (loading || !isClient) {
+    if (isLoading || !isClient) {
       return (
         <div className="flex space-x-4">
           <div className="w-16 h-8 bg-gray-200 animate-pulse rounded"></div>
@@ -49,14 +40,14 @@ export default function Navbar() {
       )
     }
 
-    if (user) {
+    if (session) {
       return (
         <div className="relative">
           <button
             onClick={toggleDropdown}
             className="flex items-center space-x-1 text-gray-800 hover:text-gray-600 focus:outline-none"
           >
-            <span>Bine ai venit, {user.name}</span>
+            <span>Bine ai venit, {session.user.email}</span>
             <ChevronDown className="h-4 w-4" />
           </button>
           {isDropdownOpen && (
@@ -76,7 +67,7 @@ export default function Navbar() {
                 Setari
               </button>
               <button
-                onClick={() => { logout(); setIsDropdownOpen(false); }}
+                onClick={() => { supabase.auth.signOut(); setIsDropdownOpen(false); }}
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
               >
                 <LogOut className="inline-block mr-2 h-4 w-4" />
@@ -159,11 +150,11 @@ export default function Navbar() {
             >
               Muncitori
             </Link>
-            {loading || !isClient ? (
+            {isLoading || !isClient ? (
               <div className="px-3 py-2">
                 <div className="w-24 h-8 bg-gray-200 animate-pulse rounded"></div>
               </div>
-            ) : user ? (
+            ) : session ? (
               <>
                 <button
                   onClick={() => { handleDashboardRedirect(); setIsOpen(false); }}
@@ -178,7 +169,7 @@ export default function Navbar() {
                   Setari
                 </button>
                 <button
-                  onClick={() => { logout(); setIsOpen(false); }}
+                  onClick={() => { supabase.auth.signOut(); setIsOpen(false); }}
                   className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 >
                   Logout

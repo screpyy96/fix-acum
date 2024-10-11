@@ -8,12 +8,13 @@ import useAuth from '@/hooks/useAuth'
 import Step1JobDetails from './steps/jobDetails'
 import RegisterClient from './steps/registerClient'
 import { FaArrowLeft, FaCheck } from 'react-icons/fa'
+import { supabase } from '@/lib/supabase'
 
 const MultiStepsForm = ({ tradeType, jobType }) => {
   const { formData, setFormData, step, nextStep, prevStep } = useForm()
   const [error, setError] = useState('')
   const router = useRouter()
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, signIn } = useAuth()
 
   const handleInputChange = (field, value) => {
     setFormData(prevData => ({
@@ -27,64 +28,75 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
 
   const handleRegister = async (clientData) => {
     try {
-      const response = await fetch('/api/auth/register-client', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Înregistrează utilizatorul cu Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email: clientData.email,
+        password: clientData.password,
+        options: {
+          data: {
+            name: clientData.name,
+            role: 'client'
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Creează profilul clientului în tabela 'profiles'
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
           name: clientData.name,
-          email: clientData.email,
-          password: clientData.password
-        }),
-      })
+          role: 'client'
+        });
 
-      const result = await response.json()
+      if (profileError) throw profileError;
 
-      if (response.ok) {
-        login({
-          token: result.token,
-          user: result.user
-        })
-        handleSubmit()
-      } else {
-        setError(result.error || 'A apărut o eroare la înregistrarea clientului.')
-      }
+      // Autentifică utilizatorul nou creat
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: clientData.email,
+        password: clientData.password,
+      });
+
+      if (signInError) throw signInError;
+
+      signIn(signInData);
+      handleSubmit();
     } catch (error) {
-      console.error('Eroare la înregistrare:', error)
-      setError('A apărut o eroare la trimiterea datelor.')
+      console.error('Eroare la înregistrare:', error);
+      setError(error.message || 'A apărut o eroare la înregistrarea clientului.');
     }
   }
 
   const handleSubmit = async () => {
     try {
-      const submitData = {
-        job: {
-          ...formData.jobDetails,
-          clientId: formData.clientId,
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) throw new Error('Nu sunteți autentificat');
+
+      const { data, error } = await supabase
+        .from('jobs')
+        .insert({
+          client_id: session.user.id,
+          title: formData.jobDetails.title,
+          description: formData.jobDetails.description,
+          trade_type: tradeType,
+          job_type: jobType,
           status: 'open',
-        },
-      }
+          budget: formData.jobDetails.budget || null,
+          location: formData.jobDetails.location || null,
+          start_date: formData.jobDetails.startDate || null,
+          end_date: formData.jobDetails.endDate || null
+        })
+        .select();
 
-      const response = await fetch('/api/jobs/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify(submitData),
-      })
+      if (error) throw error;
 
-      if (response.ok) {
-        const result = await response.json()
-        router.push('/dashboard/client')
-      } else {
-        const errorData = await response.json()
-        setError(errorData.error || 'Failed to create job.')
-      }
+      router.push('/dashboard/client');
     } catch (error) {
-      console.error('Error submitting job:', error)
-      setError('An error occurred while submitting the job.')
+      console.error('Error submitting job:', error);
+      setError('An error occurred while submitting the job.');
     }
   }
 
@@ -152,7 +164,6 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
             <FaArrowLeft className="mr-2" /> Înapoi
           </button>
         )}
-        {/* Eliminat butonul "Următorul" */}
       </div>
     </div>
   )

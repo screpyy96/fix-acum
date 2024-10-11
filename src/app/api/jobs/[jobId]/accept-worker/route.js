@@ -1,89 +1,91 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import Job from '@/models/Job';
-import { getCurrentUser } from '@/lib/auth';
-import Worker from '@/models/Worker';
-import Notification from '@/models/Notification';
+import { createClient } from '@supabase/supabase-js';
+
+// Inițializează clientul Supabase
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export async function POST(request, { params }) {
   const { jobId } = params;
-  const { workerId } = await request.json();
-
-  console.log('Received jobId:', jobId);
-  console.log('Received workerId:', workerId);
-
-  if (!workerId) {
-    return NextResponse.json({ error: 'WorkerId is missing' }, { status: 400 });
-  }
 
   try {
-    await connectToDatabase();  // Conectare la baza de date
-    const user = await getCurrentUser(request);
-
-    if (!user || user.type !== 'client') {
+    // Obține sesiunea utilizatorului
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const job = await Job.findById(jobId);
-    if (!job) {
+    const userId = session.user.id;
+
+    // Verifică dacă utilizatorul este un client
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || profile.role !== 'client') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Obține workerId din corpul cererii
+    const { workerId } = await request.json();
+
+    // Obține jobul
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('status, title')
+      .eq('id', jobId)
+      .single();
+
+    if (jobError || !job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    console.log('Job applicants:', job.applicants);
-
-    // Verificăm dacă workerul a aplicat la job
-    const applicant = job.applicants.find(applicant => 
-      applicant.workerId.toString() === workerId
-    );
-
-    console.log('Found applicant:', applicant);
-
-    if (!applicant) {
-      return NextResponse.json({ error: 'Worker has not applied for this job' }, { status: 400 });
+    // Verifică dacă jobul este deschis
+    if (job.status !== 'open') {
+      return NextResponse.json({ error: 'Cannot accept workers for jobs that are not open' }, { status: 400 });
     }
 
-    if (applicant.status === 'accepted') {
-      return NextResponse.json({ error: 'Worker has already been accepted for this job' }, { status: 400 });
+    // Actualizează statusul aplicației muncitorului
+    const { error: updateError } = await supabase
+      .from('job_applications')
+      .update({ status: 'accepted' })
+      .eq('job_id', jobId)
+      .eq('worker_id', workerId);
+
+    if (updateError) {
+      throw updateError;
     }
 
-    // Verificăm dacă tradeType-ul workerului se potrivește cu cel al jobului
-    const worker = await Worker.findById(workerId);
+    // Actualizează statusul jobului
+    const { error: jobUpdateError } = await supabase
+      .from('jobs')
+      .update({ status: 'in-progress' })
+      .eq('id', jobId);
 
-    if (!worker) {
-      return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
+    if (jobUpdateError) {
+      throw jobUpdateError;
     }
 
-    if (worker.trade !== job.tradeType) {
-      return NextResponse.json({ error: 'Worker trade does not match job requirements' }, { status: 400 });
+    // Creează notificarea pentru muncitor
+    const { data: notificationData, error: notificationError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: workerId,
+        message: `You have been accepted for the job: ${job.title}.`,
+        created_at: new Date()
+      });
+
+    if (notificationError) {
+      throw notificationError;
     }
 
-    // Actualizăm statusul aplicantului și al jobului
-    const updatedApplicants = job.applicants.map(app => 
-      app.workerId.toString() === workerId ? { ...app, status: 'accepted' } : app
-    );
-    
-    job.applicants = updatedApplicants;
-    job.status = 'in-progress'; // Schimbăm statusul jobului
-
-    const savedJob = await job.save();
-
-    console.log('Saved job:', savedJob); // Verifică dacă jobul a fost salvat corect
-
-    if (!savedJob) {
-      return NextResponse.json({ error: 'Failed to save the job' }, { status: 500 });
-    }
-
-    // După ce ai acceptat workerul, trimite notificarea
-    const notification = new Notification({
-      userId: worker._id, // ID-ul workerului
-      message: `You have been accepted for the job: ${job.title}.`,
-    });
-
-    await notification.save();
-
-    return NextResponse.json({ message: 'Worker accepted successfully', job: savedJob }, { status: 200 });
+    return NextResponse.json({ message: 'Worker accepted successfully', notification: notificationData }, { status: 200 });
   } catch (error) {
-    console.error('Error accepting worker:', error); // Log detaliat în caz de eroare
+    console.error('Error accepting worker:', error);
     return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   }
 }

@@ -1,199 +1,68 @@
 "use client"
 
-import React, { createContext, useReducer, useContext, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
-import { useRouter } from 'next/navigation';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export const AuthContext = createContext();
 
-const initialState = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: true,
-  isClient: false,
-  isWorker: false,
-};
-
-const authReducer = (state, action) => {
-  switch (action.type) {
-    case 'LOGIN':
-      return {
-        ...state,
-        user: action.payload.user,
-        token: action.payload.token,
-        isAuthenticated: true,
-        isLoading: false,
-        isClient: action.payload.user.type === 'client',
-        isWorker: action.payload.user.type === 'worker',
-      };
-    case 'LOGOUT':
-      return {
-        ...state,
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        isClient: false,
-        isWorker: false,
-      };
-    case 'SET_LOADING':
-      return {
-        ...state,
-        isLoading: action.payload,
-      };
-    default:
-      return state;
-  }
-};
-
 export function AuthProvider({ children }) {
-  const [state, dispatch] = useReducer(authReducer, initialState);
-  const router = useRouter();
+  const [session, setSession] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const decoded = jwtDecode(token);
-          if (decoded.exp < Date.now() / 1000) {
-            localStorage.removeItem('token');
-            dispatch({ type: 'LOGOUT' });
-          } else {
-            const user = {
-              id: decoded.id,
-              name: decoded.name,
-              email: decoded.email,
-              type: decoded.type,
-              trade: decoded.trade // Doar pentru worker
-            };
-            dispatch({
-              type: 'LOGIN',
-              payload: { user, token },
-            });
-          }
-        } catch (error) {
-          console.error('Error decoding token:', error);
-          localStorage.removeItem('token');
-          dispatch({ type: 'LOGOUT' });
-        }
+    const getSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error) {
+        console.error('Error fetching session:', error)
       } else {
-        loadUserFromStorage(); // Încercăm să încărcăm utilizatorul din localStorage
+        console.log('Session fetched:', session)
       }
-      dispatch({ type: 'SET_LOADING', payload: false });
-    };
-
-    initializeAuth();
-  }, []);
-
-  const login = ({ token, user }) => {
-    localStorage.setItem('token', token);
-    dispatch({
-      type: 'LOGIN',
-      payload: { user, token },
-    });
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    dispatch({ type: 'LOGOUT' });
-    router.push('/');
-  };
-
-  const updateUser = async (updateData) => {
-    try {
-      const settingsEndpoint = state.user.type === 'client' ? '/api/settings/client' : '/api/settings/worker';
-      const response = await fetch(settingsEndpoint, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.token}`
-        },
-        body: JSON.stringify(updateData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update user');
-      }
-
-      const { client, worker, token } = await response.json();
-      const updatedUser = client || worker;
-      
-      if (token) {
-        localStorage.setItem('token', token);
-      }
-
-      dispatch({
-        type: 'LOGIN',
-        payload: { user: updatedUser, token },
-      });
-
-      return updatedUser;
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw error;
+      setSession(session)
+      setIsLoading(false)
     }
-  };
 
-  const fetchUserSettings = async () => {
-    if (state.user) {
-      try {
-        const settingsEndpoint = state.user.type === 'client' ? '/api/settings/client' : '/api/settings/worker';
-        const response = await fetch(settingsEndpoint, {
-          headers: {
-            'Authorization': `Bearer ${state.token}`
-          }
-        });
-        if (response.ok) {
-          return await response.json();
-        }
-        throw new Error('Failed to fetch user settings');
-      } catch (error) {
-        console.error('Error fetching user settings:', error);
-        throw error;
-      }
+    getSession()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, session)
+      setSession(session)
+      setIsLoading(false)
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
     }
+  }, [])
+
+  const signIn = async (credentials) => {
+    const { data, error } = await supabase.auth.signInWithPassword(credentials);
+    if (error) throw error;
+    return data;
   };
 
-  const loadUserFromStorage = () => {
-    const token = localStorage.getItem('token');
-    const userString = localStorage.getItem('user');
-    if (token && userString) {
-      try {
-        const user = JSON.parse(userString);
-        dispatch({
-          type: 'LOGIN',
-          payload: { user, token },
-        });
-      } catch (error) {
-        console.error('Error parsing user data from localStorage', error);
-      }
-    }
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
   };
 
-  useEffect(() => {
-    loadUserFromStorage();
-  }, []);
+  const updateUser = async (updates) => {
+    const { data, error } = await supabase.auth.updateUser(updates);
+    if (error) throw error;
+    setSession(data.session);
+    return data;
+  };
 
-  return (
-    <AuthContext.Provider value={{ 
-      ...state, 
-      login, 
-      logout, 
-      updateUser,
-      fetchUserSettings
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    session,
+    isLoading,
+    signIn,
+    signOut,
+    updateUser
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 }

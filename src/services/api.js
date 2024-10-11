@@ -9,11 +9,12 @@ async function fetchWithAuth(endpoint, options = {}) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
-    credentials: 'include', // Adaugă această linie
+    credentials: 'include', // Asigură-te că folosești cookie-uri pentru autentificare
   });
   
   if (!response.ok) {
-    throw new Error('API request failed');
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'API request failed');
   }
   return response.json();
 }

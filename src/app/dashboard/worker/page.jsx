@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FaUserCircle, FaBriefcase, FaBuilding, FaStar, FaImages, FaCog, FaCheckCircle, FaChartBar, FaLightbulb, FaSync } from 'react-icons/fa'
 import useAuth from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 import CompanyDescription from '@/components/worker/CompanyDescription'
 import Reviews from '@/components/worker/Reviews'
 import Portfolio from '@/components/worker/Portfolio'
@@ -12,20 +13,20 @@ import Settings from '@/components/worker/Settings'
 import Notifications from '@/components/notifications/notifications'
 
 export default function WorkerDashboard() {
-  const { user, loading } = useAuth()
+  const { user, loading, isWorker } = useAuth()
   const [jobs, setJobs] = useState({ newJobs: [], appliedJobs: [], completedJobs: [], activeJobs: [] })
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('dashboard')
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !isWorker) {
       router.push('/login')
     }
-  }, [user, loading, router])
+  }, [user, loading, isWorker, router])
 
   useEffect(() => {
-    if (user && user.trade) {
+    if (user) {
       fetchWorkerJobs()
     }
   }, [user])
@@ -33,16 +34,43 @@ export default function WorkerDashboard() {
   const fetchWorkerJobs = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/jobs/worker-jobs', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.token}`
-        }
+      // Fetch new jobs
+      const { data: newJobs, error: newJobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('status', 'open')
+        .eq('tradeType', user.trade)
+
+      // Fetch applied jobs
+      const { data: appliedJobs, error: appliedJobsError } = await supabase
+        .from('job_applications')
+        .select('*, job:jobs(*)')
+        .eq('worker_id', user.id)
+
+      // Fetch active jobs
+      const { data: activeJobs, error: activeJobsError } = await supabase
+        .from('job_applications')
+        .select('*, job:jobs(*)')
+        .eq('worker_id', user.id)
+        .eq('status', 'accepted')
+
+      // Fetch completed jobs
+      const { data: completedJobs, error: completedJobsError } = await supabase
+        .from('job_applications')
+        .select('*, job:jobs(*)')
+        .eq('worker_id', user.id)
+        .eq('status', 'completed')
+
+      if (newJobsError || appliedJobsError || activeJobsError || completedJobsError) {
+        throw new Error('Failed to fetch jobs')
+      }
+
+      setJobs({
+        newJobs: newJobs || [],
+        appliedJobs: appliedJobs?.map(app => app.job) || [],
+        activeJobs: activeJobs?.map(app => app.job) || [],
+        completedJobs: completedJobs?.map(app => app.job) || []
       })
-      if (!response.ok) throw new Error('Failed to fetch jobs')
-      const data = await response.json()
-      setJobs(data)
     } catch (error) {
       console.error('Error fetching worker jobs:', error)
     } finally {
@@ -58,7 +86,7 @@ export default function WorkerDashboard() {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {jobList.map(job => (
-          <div key={job._id} className="bg-white shadow-lg rounded-lg overflow-hidden transition-transform duration-300 hover:scale-105">
+          <div key={job.id} className="bg-white shadow-lg rounded-lg overflow-hidden transition-transform duration-300 hover:scale-105">
             <div className={`p-4 ${isApplied ? 'bg-green-100' : 'bg-blue-100'}`}>
               <h3 className="text-xl font-semibold text-blue-800">{job.title}</h3>
               {isApplied && <FaCheckCircle className="text-green-500 float-right" />}
@@ -82,8 +110,8 @@ export default function WorkerDashboard() {
                 </p>
               )}
   
-              <p className="mb-4"><strong>Posted:</strong> {new Date(job.createdAt).toLocaleDateString()}</p>
-              <Link href={`/jobs/${job._id}`} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300">
+              <p className="mb-4"><strong>Posted:</strong> {new Date(job.created_at).toLocaleDateString()}</p>
+              <Link href={`/jobs/${job.id}`} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300">
                 {isApplied ? 'View Application' : 'View Details'}
               </Link>
             </div>

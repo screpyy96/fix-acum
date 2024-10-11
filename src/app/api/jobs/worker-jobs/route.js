@@ -1,56 +1,54 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import Job from '@/models/Job';
+import { createClient } from '@supabase/supabase-js';
 import Worker from '@/models/Worker'; // Asigurați-vă că importați modelul Worker
 import { getCurrentUser } from '@/lib/auth';
 
+// Inițializează clientul Supabase
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 export async function GET(request) {
   try {
-    await connectToDatabase();
-    const user = await getCurrentUser(request);
-
-    if (!user || user.type !== 'worker') {
-      console.log('Worker not found or not authorized');
-      return NextResponse.json({ error: 'Worker not found or not authorized' }, { status: 401 });
+    // Obține sesiunea utilizatorului
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const jobs = await Job.find({ tradeType: user.trade });
+    const userId = session.user.id;
 
-    const newJobs = [];
-    const activeJobs = [];
-    const appliedJobs = [];
-    const completedJobs = [];
+    // Verifică dacă utilizatorul este un muncitor
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
 
-    // Folosim Promise.all pentru a aștepta toate promisiunile
-    await Promise.all(jobs.map(async job => {
-      const hasApplied = job.applicants.some(applicant => applicant.workerId.toString() === user.id);
-      
-      if (hasApplied) {
-        const applicant = job.applicants.find(applicant => applicant.workerId.toString() === user.id);
-        
-        if (applicant.status === 'accepted') {
-          // Verificăm dacă jobul este completat
-          if (job.status === 'completed') {
-            completedJobs.push(job); // Adăugăm jobul la completedJobs
-          } else {
-            activeJobs.push(job); // Adăugăm jobul la activeJobs doar dacă nu este completat
-          }
-        } else {
-          appliedJobs.push(job); // Jobul este aplicat, dar nu acceptat
-        }
-      } else {
-        // Dacă lucrătorul nu a aplicat, clasificăm joburile în funcție de status
-        if (job.status === 'open') {
-          newJobs.push(job);
-        } else if (job.status === 'completed') {
-          completedJobs.push(job); // Joburile completate sunt acum adăugate la completedJobs
-        }
-      }
+    if (profileError || profile.role !== 'worker') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Obține joburile muncitorului
+    const { data: applications, error: applicationsError } = await supabase
+      .from('job_applications')
+      .select('job_id, status, jobs(title, description, trade_type, job_type, status)')
+      .eq('worker_id', userId);
+
+    if (applicationsError) {
+      throw applicationsError;
+    }
+
+    const workerJobs = applications.map(app => ({
+      jobId: app.job_id,
+      status: app.status,
+      jobDetails: app.jobs
     }));
 
-    return NextResponse.json({ newJobs, activeJobs, appliedJobs, completedJobs });
+    return NextResponse.json(workerJobs, { status: 200 });
   } catch (error) {
-    console.error('Error fetching jobs for worker:', error);
+    console.error('Error in worker jobs route:', error);
     return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   }
 }
