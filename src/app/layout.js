@@ -11,13 +11,15 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body className="overflow-x-hidden">
         <AuthProvider>
-          <Navbar />
-          <main>
-            {children}
-            <SpeedInsights />
-          </main>
+          <div className="flex flex-col md:flex-row min-h-screen">
+            <Navbar />
+            <main className="flex-1 w-full transition-all duration-300 ease-in-out">
+              {children}
+              <SpeedInsights />
+            </main>
+          </div>
         </AuthProvider>
       </body>
     </html>
