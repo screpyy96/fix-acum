@@ -1,0 +1,119 @@
+.navbar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(to bottom, #9333ea, #ec4899, #ef4444);
+    z-index: 40;
+    overflow: hidden;
+    transition: width 0.2s;
+  }
+  
+  .navbarContent {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+  }
+  
+  .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    transition: color 0.2s;
+    margin-bottom: 2rem;
+    display: block;
+  }
+  
+  .logo:hover {
+    color: #fde047;
+  }
+  
+  .navItems {
+    flex-grow: 1;
+  }
+  
+  .navItem {
+    display: flex;
+    align-items: center;
+    color: white;
+    transition: color 0.2s;
+    padding: 0.5rem 0;
+  }
+  
+  .navItem:hover {
+    color: #fde047;
+  }
+  
+  .iconWrapper {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .navItem:hover .iconWrapper {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .navItemText {
+    margin-left: 1rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .navItemTextVisible {
+    opacity: 1;
+  }
+  
+  .mobileMenuButton {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+    padding: 0.5rem;
+    background: linear-gradient(to right, #9333ea, #ec4899);
+    color: white;
+    border-radius: 9999px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .mobileMenu {
+    position: fixed;
+    
+    right: 0;
+    width: 16rem;
+    background: linear-gradient(to bottom, #9333ea, #ec4899, #ef4444);
+    z-index: 40;
+  }
+  
+  .mobileMenuContent {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+    padding-top: 4rem;
+  }
+  
+  @media (min-width: 768px) {
+    .navbar {
+      display: block;
+    }
+  
+    .mobileMenuButton {
+      display: none;
+    }
+  
+    .mobileMenu {
+      display: none;
+    }
+  }
+  
+  @media (max-width: 767px) {
+    .navbar {
+      display: none;
+    }
+  }

@@ -15,7 +15,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <div className="flex flex-col md:flex-row min-h-screen">
             <Navbar />
-            <main className="flex-1 w-full transition-all duration-300 ease-in-out">
+            <main className="flex-1 w-full transition-all duration-300 ease-in-out md:pl-[2rem] lg:pl-[4rem]">
               {children}
               <SpeedInsights />
             </main>

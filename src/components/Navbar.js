@@ -1,55 +1,63 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Menu, X, User, Settings, LogOut, Home, Briefcase, Users } from 'lucide-react'
-import useAuth from '@/hooks/useAuth'
-import { supabase } from '@/lib/supabase'
-import { motion, AnimatePresence } from 'framer-motion'
 
-export default function Navbar() {
-  const { user, loading } = useAuth()
-  const [isOpen, setIsOpen] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
-  const [isClient, setIsClient] = useState(false)
-  const router = useRouter()
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Menu, X, User, Settings, LogOut, Briefcase, Users } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import useAuth from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+
+const Sidebar = () => {
+  const { user, loading } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
+    setIsClient(true);
+  }, []);
 
-  const handleDashboardRedirect = () => {
+  const handleDashboardRedirect = (e) => {
+    e.preventDefault();
     if (user?.role === 'client') {
-      router.push('/dashboard/client')
+      router.push('/dashboard/client');
     } else if (user?.role === 'worker') {
-      router.push('/dashboard/worker')
+      router.push('/dashboard/worker');
     }
-    setIsOpen(false)
-  }
+    setIsOpen(false);
+  };
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    await supabase.auth.signOut();
+    setIsOpen(false);
+    router.push('/');
+  };
 
   const navItems = [
-    { name: 'Acasă', href: '/', icon: Home },
-    { name: 'Joburi', href: '/jobs', icon: Briefcase },
+    { name: 'Joburi', href: '/', icon: Briefcase },
     { name: 'Muncitori', href: '/workers', icon: Users },
-  ]
+  ];
 
   const renderNavItems = (isMobile = false) => (
-    <div className={isMobile ? "mb-8" : "space-y-6"}>
+    <div className={isMobile ? "mb-8" : "space-y-2"}>
       {navItems.map((item) => (
         <Link
           key={item.name}
-          href={user ? item.href : '/login'}
-          className={`group flex items-center text-white hover:text-yellow-300 transition-colors duration-100 ${isMobile ? 'py-4' : ''}`}
+          href={item.href}
+          className={`group flex items-center text-white hover:text-yellow-300 transition-colors duration-200 ${isMobile ? 'py-4' : 'py-2'}`}
           onClick={() => setIsOpen(false)}
         >
-          <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center">
-            <item.icon className="h-5 w-5" />
+          <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+            <item.icon className="h-6 w-6" />
           </div>
-          <motion.span 
-            className="ml-4"
-            initial={isMobile ? { opacity: 1 } : { opacity: 0 }}
-            animate={{ opacity: isMobile || isHovered ? 1 : 0 }}
+          <motion.span
+            className="ml-4 whitespace-nowrap"
+            initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
+            animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
             transition={{ duration: 0.2 }}
           >
             {item.name}
@@ -57,166 +65,130 @@ export default function Navbar() {
         </Link>
       ))}
     </div>
-  )
+  );
 
   const renderAuthItems = (isMobile = false) => {
     if (loading || !isClient) {
       return (
-        <div className="flex flex-col space-y-2">
-          <div className="w-8 h-8 bg-white bg-opacity-20 animate-pulse rounded-full"></div>
-          <div className="w-8 h-8 bg-yellow-300 bg-opacity-20 animate-pulse rounded-full"></div>
+        <div className="flex flex-col space-y-4">
+          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
+          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
+          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
         </div>
-      )
+      );
     }
 
-    if (user) {
-      return (
-        <div className={isMobile ? "space-y-4" : "space-y-6"}>
-          <button
-            onClick={handleDashboardRedirect}
-            className={`group flex items-center text-white hover:text-yellow-300 transition-colors duration-100 w-full ${isMobile ? 'py-4' : ''}`}
-          >
-            <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center">
-              <User className="h-5 w-5" />
-            </div>
-            <motion.span 
-              className="ml-4"
-              initial={isMobile ? { opacity: 1 } : { opacity: 0 }}
-              animate={{ opacity: isMobile || isHovered ? 1 : 0 }}
-              transition={{ duration: 0.1 }}
-            >
-              Dashboard
-            </motion.span>
-          </button>
-          <button
-            onClick={() => { router.push('/settings'); setIsOpen(false); }}
-            className={`group flex items-center text-white hover:text-yellow-300 transition-colors duration-100 w-full ${isMobile ? 'py-4' : ''}`}
-          >
-            <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center">
-              <Settings className="h-5 w-5" />
-            </div>
-            <motion.span 
-              className="ml-4"
-              initial={isMobile ? { opacity: 1 } : { opacity: 0 }}
-              animate={{ opacity: isMobile || isHovered ? 1 : 0 }}
-              transition={{ duration: 0.1 }}
-            >
-              Setări
-            </motion.span>
-          </button>
-          <button
-            onClick={async () => { 
-              await supabase.auth.signOut(); 
-              setIsOpen(false);
-              router.push('/');
-            }}
-            className={`group flex items-center text-white hover:text-yellow-300 transition-colors duration-100 w-full ${isMobile ? 'py-4' : ''}`}
-          >
-            <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center">
-              <LogOut className="h-5 w-5" />
-            </div>
-            <motion.span 
-              className="ml-4"
-              initial={isMobile ? { opacity: 1 } : { opacity: 0 }}
-              animate={{ opacity: isMobile || isHovered ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              Logout
-            </motion.span>
-          </button>
-        </div>
-      )
-    }
+    const authItems = user
+      ? [
+          { name: 'Dashboard', icon: User, onClick: handleDashboardRedirect },
+          { name: 'Setări', icon: Settings, onClick: (e) => { e.preventDefault(); router.push('/settings'); setIsOpen(false); } },
+          { name: 'Logout', icon: LogOut, onClick: handleLogout },
+        ]
+      : [ 
+          { name: 'Log In', icon: User, href: '/login' },
+          { name: 'Sign Up', icon: Users, href: '/register/client' },
+        ];
 
     return (
-      <div className={isMobile ? "space-y-4" : "space-y-6"}>
-        <Link
-          href="/login"
-          className={`group flex items-center text-white hover:text-yellow-300 transition-colors duration-100 ${isMobile ? 'py-4' : ''}`}
-          onClick={() => setIsOpen(false)}
-        >
-          <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center">
-            <User className="h-5 w-5" />
-          </div>
-          <motion.span 
-            className="ml-4"
-            initial={isMobile ? { opacity: 1 } : { opacity: 0 }}
-            animate={{ opacity: isMobile || isHovered ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
+      <div className={`flex flex-col ${isMobile ? "space-y-4" : "space-y-2"}`}>
+        {authItems.map((item, index) => (
+          <div 
+            key={index} 
+            className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
           >
-            Log In
-          </motion.span>
-        </Link>
-        <Link
-          href="/register/worker"
-          className={`group flex items-center text-purple-700 hover:text-purple-900 transition-colors duration-100 ${isMobile ? 'py-4' : ''}`}
-          onClick={() => setIsOpen(false)}
-        >
-          <div className="w-8 h-8 rounded-full bg-yellow-400 hover:bg-yellow-300 flex items-center justify-center">
-            <Users className="h-5 w-5" />
+            {item.onClick ? (
+              <button 
+                className="flex items-center w-full py-1" 
+                onClick={item.onClick}
+              >
+                <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+                  <item.icon className="h-6 w-6" />
+                </div>
+                <motion.span
+                  className="ml-4 whitespace-nowrap"
+                  initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
+                  animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {item.name}
+                </motion.span>
+              </button>
+            ) : (
+              <Link
+                href={item.href}
+                className="flex items-center w-full py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+                  <item.icon className="h-6 w-6" />
+                </div>
+                <motion.span
+                  className="ml-4 whitespace-nowrap"
+                  initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
+                  animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {item.name}
+                </motion.span>
+              </Link>
+            )}
           </div>
-          <motion.span 
-            className="ml-4"
-            initial={isMobile ? { opacity: 1 } : { opacity: 0 }}
-            animate={{ opacity: isMobile || isHovered ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            Sign Up
-          </motion.span>
-        </Link>
+        ))}
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <>
       <motion.nav 
         className="fixed left-0 top-0 h-full bg-gradient-to-b from-purple-600 via-pink-500 to-red-500 z-40 overflow-hidden navbar hidden md:block"
-        initial={{ width: '4rem' }}
-        animate={{ width: isHovered ? '16rem' : '4rem' }}
+        initial={{ width: '5rem' }}
+        animate={{ width: isHovered ? '16rem' : '4.3rem' }}
         transition={{ duration: 0.3 }}
         onHoverStart={() => setIsHovered(true)}
         onHoverEnd={() => setIsHovered(false)}
       >
-        <div className="flex flex-col h-full p-4 justify-between">
-          <div>
-            <Link href="/" className="text-2xl font-bold text-white hover:text-yellow-300 transition-colors duration-100 mb-8 block">
-              FA
-            </Link>
+        <div className="flex flex-col h-full p-4">
+          <Link href="/" className="text-2xl font-bold text-white hover:text-yellow-300 transition-colors duration-200 mb-8 block flex items-center align-middle ml-1 ">
+            FA
+          </Link>
+          <div className="flex-grow">
             {renderNavItems()}
           </div>
-          <div>
+          <div className="mt-auto">
             {renderAuthItems()}
           </div>
         </div>
       </motion.nav>
 
       {/* Mobile menu button */}
-      <button
+      <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 right-4 z-50 p-2 bg-purple-600 text-white rounded-full shadow-lg"
+        className="md:hidden fixed top-4 right-4 z-50 p-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full shadow-lg"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
       >
         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-      </button>
+      </motion.button>
 
       {/* Mobile menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-gradient-to-b from-purple-600 via-pink-500 to-red-500 z-40 md:hidden"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="fixed inset-y-0 right-0 w-64 bg-gradient-to-b from-purple-600 via-pink-500 to-red-500 z-40 md:hidden"
           >
-            <div className="flex flex-col h-full p-4 justify-between">
-              <div>
-                <Link href="/" className="text-2xl font-bold text-white hover:text-yellow-300 transition-colors duration-100 mb-8 block">
-                  FA
-                </Link>
+            <div className="flex flex-col h-full p-4 pt-16">
+              <Link href="/" className="text-2xl font-bold text-white hover:text-yellow-300 transition-colors duration-200 mb-8 block">
+                FA
+              </Link>
+              <div className="flex-grow">
                 {renderNavItems(true)}
               </div>
-              <div>
+              <div className="mt-auto">
                 {renderAuthItems(true)}
               </div>
             </div>
@@ -224,5 +196,7 @@ export default function Navbar() {
         )}
       </AnimatePresence>
     </>
-  )
-}
+  );
+};
+
+export default Sidebar;
