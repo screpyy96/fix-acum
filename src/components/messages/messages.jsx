@@ -94,6 +94,25 @@ export default function Messages({ jobId, workerId }) {
     scrollToBottom();
   }, []);
 
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      if (jobId && user) {
+        const { error } = await supabase
+          .from('messages')
+          .update({ is_read: true })
+          .eq('job_id', jobId)
+          .neq('sender_id', user.id)
+          .eq('is_read', false);
+
+        if (error) {
+          console.error('Error marking messages as read:', error);
+        }
+      }
+    };
+
+    markMessagesAsRead();
+  }, [jobId, user]);
+
   const sendTypingIndicator = async () => {
     await supabase.channel(`messages:${jobId}`).send({
       type: 'broadcast',
@@ -105,36 +124,22 @@ export default function Messages({ jobId, workerId }) {
   const sendMessage = async () => {
     if (newMessage.trim() === '' || !canMessage) return;
 
-    const tempId = `temp-${Date.now()}`;
-    const tempMessage = {
-      id: tempId,
-      job_id: jobId,
-      sender_id: user.id,
-      content: newMessage,
-      worker_id: workerId,
-      created_at: new Date().toISOString(),
-      status: 'sending'
-    };
-
-    setMessages(prevMessages => [...prevMessages, tempMessage]);
-    setNewMessage('');
-
     const { data, error } = await supabase
       .from('messages')
       .insert({
         job_id: jobId,
         sender_id: user.id,
         content: newMessage,
-        worker_id: workerId
+        worker_id: workerId,
+        is_read: false // Setăm mesajul ca necitit inițial
       })
       .select();
 
     if (error) {
       console.error('Error sending message:', error);
-      setMessages(prevMessages => prevMessages.filter(msg => msg.id !== tempId));
     } else if (data && data.length > 0) {
       setMessages(prevMessages => 
-        prevMessages.map(msg => msg.id === tempId ? { ...data[0], status: 'sent' } : msg)
+        prevMessages.map(msg => msg.id === data[0].id ? { ...data[0], status: 'sent' } : msg)
       );
     }
   };

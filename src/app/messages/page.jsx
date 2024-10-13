@@ -14,6 +14,7 @@ export default function ConversationsPage() {
   const router = useRouter();
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [unreadCounts, setUnreadCounts] = useState({});
 
   useEffect(() => {
     if (user) {
@@ -61,6 +62,21 @@ export default function ConversationsPage() {
           );
           setConversations(uniqueApps);
         }
+
+        // Fetch unread message counts using raw SQL
+        const { data: unreadData, error: unreadError } = await supabase
+          .rpc('get_unread_message_counts', { user_id: user.id });
+
+        if (unreadError) {
+          console.error('Error fetching unread counts:', unreadError);
+        } else {
+          const counts = {};
+          unreadData.forEach(item => {
+            counts[item.job_id] = parseInt(item.count);
+          });
+          setUnreadCounts(counts);
+        }
+
         setIsLoading(false);
       };
 
@@ -130,8 +146,12 @@ export default function ConversationsPage() {
                           </div>
                         </div>
                       </div>
-                      <div>
-                        <ChevronRight className="h-5 w-5 text-gray-400" />
+                      <div className="flex-shrink-0 ml-2">
+                        {unreadCounts[conv.job_id] > 0 && (
+                          <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                            {unreadCounts[conv.job_id]}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
