@@ -1,6 +1,5 @@
-// components/DashboardLayout.js
-import { useState } from 'react';
-import { Home, Briefcase, User, MessageSquare, Star, Settings, LogOut } from 'lucide-react';
+
+import { Home, Briefcase, User, MessageSquare, Star, Settings } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 

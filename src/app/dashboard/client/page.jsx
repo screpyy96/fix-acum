@@ -7,8 +7,10 @@ import { supabase } from '@/lib/supabase'
 import JobList from '@/components/jobList/jobList'
 import EditJobModal from '@/components/jobModal/jobModal'
 import { FaPlus, FaChartBar, FaUser, FaCheckCircle } from 'react-icons/fa'
-import Link from 'next/link'
+
 import { createNotification } from '@/lib/notifications'
+import NotificationBell from '@/components/notifications/notifications'
+import NotificationsList from '@/components/notifications/notificationList'
 
 export default function ClientDashboard() {
   const { user } = useAuth()
@@ -151,13 +153,10 @@ export default function ClientDashboard() {
             <h1 className="text-3xl font-bold text-gray-800">Welcome, {user?.name}</h1>
             <p className="text-gray-600">Manage your projects and workers</p>
           </div>
-          <Link 
-            href="/new-job"
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full flex items-center"
-          >
-            <FaPlus className="mr-2" /> New Job
-          </Link>
+          <NotificationBell />
         </div>
+
+        <NotificationsList /> {/* Add the NotificationsList component here */}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white p-4 rounded-lg shadow">

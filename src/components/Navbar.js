@@ -1,12 +1,11 @@
 'use client'
 
-
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 'lucide-react';
+import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {useAuth} from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import NotificationBell from './notifications/notifications';
 
@@ -65,7 +64,6 @@ const Navbar = () => {
 
   const renderAuthItems = (isMobile = false) => {
     if (loading) {
-      // While loading, you might want to show a loading indicator or skeleton
       return (
         <div className="flex flex-col space-y-4">
           <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
@@ -76,7 +74,6 @@ const Navbar = () => {
     }
 
     if (!user) {
-      // Show login and sign-up options when not logged in
       return (
         <div className={`flex flex-col ${isMobile ? "space-y-4" : "space-y-2"}`}>
           <Link
@@ -117,12 +114,11 @@ const Navbar = () => {
       );
     }
 
-    // Render authenticated user items
     const authItems = user
       ? [
           { name: 'Dashboard', icon: User, onClick: handleDashboardRedirect },
           { name: 'Setări', icon: Settings, onClick: (e) => { e.preventDefault(); router.push('/settings'); setIsOpen(false); } },
-          { name: 'Notificări', icon: Bell, component: <NotificationBell /> },
+          { name: 'Notificări', component: <NotificationBell /> },
           { name: 'Logout', icon: LogOut, onClick: handleLogout },
         ]
       : [];
@@ -135,20 +131,26 @@ const Navbar = () => {
             className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
           >
             {item.component ? (
-              <div className="flex items-center">
-                {item.component}
+              <Link
+                href="/notifications"
+                className="flex items-center w-full py-2 cursor-pointer text-white hover:text-yellow-300 transition-colors duration-200"
+                onClick={() => setIsOpen(false)}
+              >
+                <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+                  {item.component}
+                </div>
                 <motion.span
-                  className="ml-4 whitespace-nowrap"
+                  className="ml-4 whitespace-nowrap text-sm"
                   initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
                   animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {item.name}
+                  {item.component.props.unreadCount > 0 ? 'Notificări noi' : 'Fără notificări noi'}
                 </motion.span>
-              </div>
+              </Link>
             ) : item.onClick ? (
               <button 
-                className="flex items-center w-full py-1" 
+                className="flex items-center w-full py-1 cursor-pointer" 
                 onClick={item.onClick}
               >
                 <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
@@ -191,7 +193,7 @@ const Navbar = () => {
   return (
     <>
       <motion.nav 
-        className="fixed left-0 top-0 h-full bg-gradient-to-b from-purple-600 via-pink-500 to-red-500 z-40 overflow-hidden navbar hidden md:block"
+        className="fixed left-0 top-0 h-full bg-gradient-to-b from-purple-600 via-pink-500 to-red-500 z-40 overflow-hidden navbar hidden md:block group"
         initial={{ width: '5rem' }}
         animate={{ width: isHovered ? '16rem' : '4.3rem' }}
         transition={{ duration: 0.3 }}
@@ -218,7 +220,6 @@ const Navbar = () => {
             {renderNavItems()}
           </div>
           <div className="mt-auto flex items-center space-x-4">
-           
             {renderAuthItems()}
           </div>
         </div>

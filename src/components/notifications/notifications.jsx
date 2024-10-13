@@ -1,4 +1,4 @@
-// src/components/NotificationBell.js
+// src/components/notifications/notifications.jsx
 import React, { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -22,9 +22,9 @@ export default function NotificationBell() {
 
       const channel = supabase
         .channel(`public:notifications:user_id=eq.${user.id}`)
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
         }, payload => {
@@ -39,30 +39,25 @@ export default function NotificationBell() {
   }, [user]);
 
   const handleBellClick = () => {
-    if (user?.role === 'client') {
-      router.push('/dashboard/client');
-    } else if (user?.role === 'worker') {
-      router.push('/dashboard/worker');
-    }
+    router.push('/notifications');
   };
 
+  // Calculate the number of unread notifications
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <div className="relative">
-      <button
-        onClick={handleBellClick}
-        className="flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
-      >
+    <div className="relative flex items-center cursor-pointer" onClick={handleBellClick}>
+      <div className="flex items-center text-gray-700 hover:text-yellow-300 transition-colors duration-200">
         <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
-          <Bell className="h-5 w-5" />
+          <Bell className="h-5 w-5 text-white hover:text-yellow-300" />
         </div>
+        {/* Badge for unread notifications */}
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
             {unreadCount}
           </span>
         )}
-      </button>
+      </div>
     </div>
   );
 }
