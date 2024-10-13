@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer } from 'lucide-react';
+import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import NotificationBell from './notifications/notifications';
 
+import MessageNotifications from './notifications/messageNotifications'
 const Navbar = () => {
   const { user, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -118,7 +118,8 @@ const Navbar = () => {
       ? [
           { name: 'Dashboard', icon: User, onClick: handleDashboardRedirect },
           { name: 'Setări', icon: Settings, onClick: (e) => { e.preventDefault(); router.push('/settings'); setIsOpen(false); } },
-          { name: 'Notificări', component: <NotificationBell /> },
+          { name: 'Notificări', icon: Bell, onClick: (e) => { e.preventDefault(); router.push('/notifications'); setIsOpen(false); } },
+          { name: 'Mesaje', component: <MessageNotifications />, href: '/messages' },
           { name: 'Logout', icon: LogOut, onClick: handleLogout },
         ]
       : [];
@@ -132,7 +133,7 @@ const Navbar = () => {
           >
             {item.component ? (
               <Link
-                href="/notifications"
+                href={item.href || "/notifications"}
                 className="flex items-center w-full py-2 cursor-pointer text-white hover:text-yellow-300 transition-colors duration-200"
                 onClick={() => setIsOpen(false)}
               >
@@ -145,7 +146,7 @@ const Navbar = () => {
                   animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {item.component.props.unreadCount > 0 ? 'Notificări noi' : 'Fără notificări noi'}
+                  {item.name}
                 </motion.span>
               </Link>
             ) : item.onClick ? (
