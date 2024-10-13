@@ -11,7 +11,7 @@ import { FaArrowLeft, FaCheck } from 'react-icons/fa'
 import { supabase } from '@/lib/supabase'
 
 const MultiStepsForm = ({ tradeType, jobType }) => {
-  const { formData, setFormData, step, nextStep, prevStep } = useForm()
+  const { formData, setFormData, step, nextStep, prevStep, convertDateValue } = useForm()
   const [error, setError] = useState('')
   const router = useRouter()
   const { isAuthenticated, signIn } = useAuth()
@@ -75,20 +75,18 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
           status: 'open',
           budget: formData.jobDetails.budget || null,
           location: formData.jobDetails.location || null,
-          startDate: formData.jobDetails.startDate || null,
-          endDate: formData.jobDetails.endDate || null
+          startDate: convertDateValue(formData.jobDetails.startDate),
+          endDate: convertDateValue(formData.jobDetails.endDate)
         })
         .select();
 
       if (error) {
         console.error('Eroare la inserarea job-ului:', error)
-        // Gestionați eroarea aici
+        setError(error.message || 'A apărut o eroare la crearea job-ului.');
       } else {
         console.log('Job inserat cu succes:', data)
-        // Folosiți data aici, de exemplu pentru a actualiza starea sau UI-ul
+        router.push('/dashboard/client');
       }
-
-      router.push('/dashboard/client');
     } catch (error) {
       console.error('Error submitting job:', error);
       setError('An error occurred while submitting the job.');

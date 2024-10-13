@@ -11,14 +11,14 @@ export function AuthProvider({ children }) {
 	const [userRole, setUserRole] = useState(null);
 
 	useEffect(() => {
-		console.log('AuthProvider useEffect started');
+		// console.log('AuthProvider useEffect started');
 		let mounted = true;
 
 		const getSession = async () => {
-			console.log('Getting session...');
+			// console.log('Getting session...');
 			try {
 				const { data: { session }, error } = await supabase.auth.getSession();
-				console.log('Session received:', session);
+				// console.log('Session received:', session);
 				if (error) throw error;
 				
 				if (mounted) {
@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
 				console.error('Error fetching session:', error);
 			} finally {
 				if (mounted) {
-					console.log('Setting loading to false');
+					// console.log('Setting loading to false');
 					setLoading(false);
 				}
 			}
@@ -49,7 +49,7 @@ export function AuthProvider({ children }) {
 		getSession();
 
 		const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-			console.log('Auth state changed:', event);
+			// console.log('Auth state changed:', event);
 			if (mounted) {
 				setSession(session);
 				if (session?.user) {
@@ -73,7 +73,7 @@ export function AuthProvider({ children }) {
 		};
 	}, []);
 
-	console.log('Current state:', { session, user, loading });
+	// console.log('Current state:', { session, user, loading });
 
 	const fetchUserRole = async (userId) => {
 		const { data, error } = await supabase

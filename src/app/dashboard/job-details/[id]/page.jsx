@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaTools, FaMoneyBillWave, FaMapMarkerAlt, FaClock, FaUser } from 'react-icons/fa';
+import { createNotification } from '@/lib/notifications';
 
 export default function JobDetails({ params }) {
   const { user, loading } = useAuth();
@@ -63,13 +64,24 @@ export default function JobDetails({ params }) {
     if (hasApplied) return;
     setIsApplying(true);
     try {
-      const { data, error } = await supabase
+      // Aplicare la job
+      const { data: applicationData, error: applicationError } = await supabase
         .from('job_applications')
         .insert([
           { job_id: params.id, worker_id: user.id, status: 'pending' }
-        ]);
+        ])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (applicationError) throw applicationError;
+
+      // Crearea notificării pentru client
+      await createNotification(
+        job.client_id,
+        'new_application',
+        `Un nou worker a aplicat la jobul tău: ${job.title}`
+      );
+
       setHasApplied(true);
       toast.success('Application submitted successfully!');
     } catch (error) {

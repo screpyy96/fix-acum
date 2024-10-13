@@ -8,6 +8,7 @@ import JobList from '@/components/jobList/jobList'
 import EditJobModal from '@/components/jobModal/jobModal'
 import { FaPlus, FaChartBar, FaUser, FaCheckCircle } from 'react-icons/fa'
 import Link from 'next/link'
+import { createNotification } from '@/lib/notifications'
 
 export default function ClientDashboard() {
   const { user } = useAuth()
@@ -103,20 +104,39 @@ export default function ClientDashboard() {
 
   const handleAcceptWorker = async (jobId, workerId) => {
     try {
+      // Actualizare status job
       await supabase
         .from('jobs')
         .update({ status: 'in-progress' })
-        .eq('id', jobId)
+        .eq('id', jobId);
 
+      // Actualizare status aplicație
       await supabase
         .from('job_applications')
         .update({ status: 'accepted' })
         .eq('job_id', jobId)
-        .eq('worker_id', workerId)
+        .eq('worker_id', workerId);
 
-      fetchClientData() // Refresh data to update job statuses and stats
+      // Obținere detalii job pentru titlu
+      const { data: jobData, error: jobError } = await supabase
+        .from('jobs')
+        .select('title')
+        .eq('id', jobId)
+        .single();
+
+      if (jobError) throw jobError;
+
+      // Crearea notificării pentru worker
+      await createNotification(
+        workerId,
+        'application_accepted',
+        `Aplicația ta pentru jobul "${jobData.title}" a fost acceptată!`
+      );
+
+      fetchClientData(); // Refresh data to update job statuses and stats
     } catch (error) {
-      console.error('Error accepting worker:', error)
+      console.error('Error accepting worker:', error);
+      // Aici puteți adăuga logica pentru afișarea unei erori către utilizator
     }
   }
 

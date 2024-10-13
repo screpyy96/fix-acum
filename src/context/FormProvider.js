@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
+import { supabase } from '@/lib/supabase'; // Asigurați-vă că aveți această importare
 
 const FormContext = createContext();
 
@@ -61,8 +62,67 @@ export const FormProvider = ({ children, initialTradeType, initialJobType }) => 
     console.log(`Updated ${section} field ${field} with value:`, value);
   }, []);
 
+  const convertDateValue = (value) => {
+    const today = new Date();
+    switch(value) {
+      case 'urgent':
+        return today.toISOString().split('T')[0]; // Returnează data de azi
+      case '2days':
+        today.setDate(today.getDate() + 2);
+        return today.toISOString().split('T')[0];
+      case '1week':
+        today.setDate(today.getDate() + 7);
+        return today.toISOString().split('T')[0];
+      case '2weeks':
+        today.setDate(today.getDate() + 14);
+        return today.toISOString().split('T')[0];
+      case '1month':
+        today.setMonth(today.getMonth() + 1);
+        return today.toISOString().split('T')[0];
+      case 'flexible':
+        return null; // Sau o altă valoare implicită
+      default:
+        return value; // Returnează valoarea originală dacă nu se potrivește cu niciun caz
+    }
+  };
+
+  const submitFormData = async () => {
+    const convertedJobData = {
+      ...formData.jobDetails,
+      startDate: convertDateValue(formData.jobDetails.startDate),
+      endDate: convertDateValue(formData.jobDetails.endDate)
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .insert([
+          {
+            ...convertedJobData,
+            client_id: formData.clientId,
+            // Adăugați alte câmpuri necesare aici
+          }
+        ]);
+
+      if (error) throw error;
+      console.log('Job postat cu succes:', data);
+      // Aici puteți adăuga logica pentru ce se întâmplă după postarea cu succes
+    } catch (error) {
+      console.error('Eroare la postarea jobului:', error);
+      // Aici puteți adăuga logica pentru gestionarea erorilor
+    }
+  };
+
   return (
-    <FormContext.Provider value={{ step, formData, handleInputChange, nextStep, prevStep }}>
+    <FormContext.Provider value={{ 
+      step, 
+      formData, 
+      handleInputChange, 
+      nextStep, 
+      prevStep,
+      submitFormData,
+      convertDateValue // Adăugați această funcție la context
+    }}>
       {children}
     </FormContext.Provider>
   );

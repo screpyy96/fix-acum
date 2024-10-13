@@ -4,21 +4,46 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, X, User, Settings, LogOut, Briefcase, Users } from 'lucide-react';
+import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useAuth from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
+import { getNotifications, markNotificationAsRead } from '@/lib/notifications';
 
-const Sidebar = () => {
+const Navbar = () => {
   const { user, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    if (user) {
+      const fetchNotifications = async () => {
+        const data = await getNotifications(user.id);
+        if (data) setNotifications(data);
+      };
+
+      fetchNotifications();
+
+      const channel = supabase
+        .channel(`public:notifications:user_id=eq.${user.id}`)
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        }, payload => {
+          setNotifications(current => [payload.new, ...current]);
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user]);
 
   const handleDashboardRedirect = (e) => {
     e.preventDefault();
@@ -68,7 +93,7 @@ const Sidebar = () => {
   );
 
   const renderAuthItems = (isMobile = false) => {
-    if (loading || !isClient) {
+    if (loading || !user) {
       return (
         <div className="flex flex-col space-y-4">
           <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
@@ -138,6 +163,61 @@ const Sidebar = () => {
     );
   };
 
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      await markNotificationAsRead(notification.id);
+      setNotifications(current =>
+        current.map(notif =>
+          notif.id === notification.id ? { ...notif, is_read: true } : notif
+        )
+      );
+      setShowNotifications(false);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const renderNotifications = () => (
+    <div className="relative">
+      <button
+        onClick={() => setShowNotifications(!showNotifications)}
+        className="flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
+      >
+        <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
+          <Bell className="h-5 w-5" />
+        </div>
+        {notifications.filter(n => !n.is_read).length > 0 && (
+          <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+            {notifications.filter(n => !n.is_read).length}
+          </span>
+        )}
+      </button>
+      {showNotifications && (
+        <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg overflow-hidden z-50">
+          {notifications.length > 0 ? (
+            notifications.map(notification => (
+              <div
+                key={notification.id}
+                className={`p-2 hover:bg-gray-100 cursor-pointer ${notification.is_read ? 'bg-gray-50' : 'bg-blue-50'}`}
+                onClick={() => handleNotificationClick(notification)}
+              >
+                <p className="text-sm text-gray-800">{notification?.content}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(notification.created_at).toLocaleString()}
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="p-2 text-center text-gray-500">Nu există notificări</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+
+
   return (
     <>
       <motion.nav 
@@ -149,14 +229,27 @@ const Sidebar = () => {
         onHoverEnd={() => setIsHovered(false)}
       >
         <div className="flex flex-col h-full p-4">
-          <Link href="/" className="text-2xl font-bold text-white hover:text-yellow-300 transition-colors duration-200 mb-8 block flex items-center align-middle ml-1 ">
-            FA
+          <Link href="/" className="text-2xl font-bold text-white hover:text-yellow-300 transition-colors duration-200 mb-8 block">
+            <div className="flex items-center relative">
+              <div className="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center absolute mr-3">
+                <Hammer size={30} />
+              </div>
+              <motion.span
+                className="ml-12 whitespace-nowrap"
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: isHovered ? 1 : 0, width: isHovered ? 'auto' : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                Fix Acum
+              </motion.span>
+            </div>
           </Link>
           <div className="flex-grow">
             {renderNavItems()}
           </div>
           <div className="mt-auto">
             {renderAuthItems()}
+            {user && renderNotifications()}
           </div>
         </div>
       </motion.nav>
@@ -199,4 +292,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default Navbar;
