@@ -91,8 +91,9 @@ export default function ConversationsPage() {
   if (!user) return null;
 
   const filteredConversations = conversations.filter(conv =>
-    conv.jobs.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.profiles.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (conv.jobs && conv.jobs.title && conv.jobs.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (conv.worker && conv.worker.name && conv.worker.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (conv.client && conv.client.name && conv.client.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (isLoading) {

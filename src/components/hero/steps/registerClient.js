@@ -1,36 +1,61 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useForm } from '@/context/FormProvider';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext'; // Asigură-te că importi contextul de autentificare
 
-const RegisterClient = ({ onRegister }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+const RegisterClient = () => {
+  const { formData, handleInputChange, nextStep } = useForm();
+  const { setUser, setUserRole } = useAuth(); // Adăugăm setUser și setUserRole din contextul de autentificare
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
+    handleInputChange('userDetails', name, value);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.userDetails.password !== formData.userDetails.confirmPassword) {
       setError('Parolele nu se potrivesc.');
       return;
     }
 
-    onRegister(formData);
+    try {
+      // Înregistrarea utilizatorului
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.userDetails.email,
+        password: formData.userDetails.password,
+      });
+
+      if (error) throw error;
+
+      // Crearea profilului utilizatorului cu rolul specific
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          name: formData.userDetails.name,
+          email: formData.userDetails.email,
+          role: 'client' // Sau 'worker' pentru RegisterWorker
+        });
+
+      if (profileError) throw profileError;
+
+      // Actualizăm contextul de autentificare
+      setUser({ ...data.user, role: 'client' });
+      setUserRole('client');
+
+      nextStep(); // Trece la următorul pas după înregistrare cu succes
+    } catch (error) {
+      console.error('Error during registration:', error);
+      setError(error.message);
+    }
   };
 
   const togglePasswordVisibility = (field) => {
@@ -46,7 +71,7 @@ const RegisterClient = ({ onRegister }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className=" p-8 rounded-lg shadow-xl max-w-md mx-auto"
+      className="p-8 rounded-lg shadow-xl max-w-md mx-auto"
     >
       <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Înregistrare Client</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -58,7 +83,7 @@ const RegisterClient = ({ onRegister }) => {
               type="text"
               id="name"
               name="name"
-              value={formData.name}
+              value={formData.userDetails.name}
               onChange={handleChange}
               required
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
@@ -74,7 +99,7 @@ const RegisterClient = ({ onRegister }) => {
               type="email"
               id="email"
               name="email"
-              value={formData.email}
+              value={formData.userDetails.email}
               onChange={handleChange}
               required
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
@@ -90,7 +115,7 @@ const RegisterClient = ({ onRegister }) => {
               type={showPassword ? "text" : "password"}
               id="password"
               name="password"
-              value={formData.password}
+              value={formData.userDetails.password}
               onChange={handleChange}
               required
               className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
@@ -113,7 +138,7 @@ const RegisterClient = ({ onRegister }) => {
               type={showConfirmPassword ? "text" : "password"}
               id="confirmPassword"
               name="confirmPassword"
-              value={formData.confirmPassword}
+              value={formData.userDetails.confirmPassword}
               onChange={handleChange}
               required
               className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"

@@ -11,63 +11,47 @@ import { FaArrowLeft, FaCheck } from 'react-icons/fa'
 import { supabase } from '@/lib/supabase'
 
 const MultiStepsForm = ({ tradeType, jobType }) => {
-  const { formData, setFormData, step, nextStep, prevStep, convertDateValue } = useForm()
+  const { formData, step, nextStep, prevStep, convertDateValue } = useForm()
   const [error, setError] = useState('')
   const router = useRouter()
-  const { isAuthenticated, signIn } = useAuth()
-
-  const handleInputChange = (field, value) => {
-    setFormData(prevData => ({
-      ...prevData,
-      jobDetails: {
-        ...prevData.jobDetails,
-        [field]: value,
-      },
-    }))
-  }
-
-  const handleRegister = async (clientData) => {
-    try {
-      const response = await fetch('/api/auth/register-client', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(clientData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'A apărut o eroare la înregistrare.');
-      }
-
-      // Autentifică utilizatorul nou creat
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: clientData.email,
-        password: clientData.password,
-      });
-
-      if (signInError) throw signInError;
-
-      signIn(signInData);
-      handleSubmit();
-    } catch (error) {
-      console.error('Eroare la înregistrare:', error);
-      setError(error.message || 'A apărut o eroare la înregistrarea clientului.');
-    }
-  }
+  const { isAuthenticated } = useAuth()
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (!isAuthenticated) {
+        // Înregistrarea utilizatorului folosind Supabase
+        const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+          email: formData.userDetails.email,
+          password: formData.userDetails.password,
+        });
 
-      if (sessionError || !session) throw new Error('Nu sunteți autentificat');
+        if (signUpError) throw signUpError;
 
-      const { data, error } = await supabase
+        // Crearea profilului utilizatorului
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            name: formData.userDetails.name,
+            email: formData.userDetails.email,
+            role: 'client'
+          });
+
+        if (profileError) throw profileError;
+      }
+
+      // Obținem ID-ul utilizatorului curent
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Crearea job-ului
+      const { error: jobError } = await supabase
         .from('jobs')
         .insert({
-          client_id: session.user.id,
+          client_id: user.id,
           title: formData.jobDetails.title,
           description: formData.jobDetails.description,
           tradeType: tradeType,
@@ -77,26 +61,24 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
           location: formData.jobDetails.location || null,
           startDate: convertDateValue(formData.jobDetails.startDate),
           endDate: convertDateValue(formData.jobDetails.endDate)
-        })
-        .select();
+        });
 
-      if (error) {
-        console.error('Eroare la inserarea job-ului:', error)
-        setError(error.message || 'A apărut o eroare la crearea job-ului.');
-      } else {
-        console.log('Job inserat cu succes:', data)
-        router.push('/dashboard/client');
-      }
+      if (jobError) throw jobError;
+
+      // Succes - redirecționare către dashboard
+      router.push('/dashboard/client');
     } catch (error) {
-      console.error('Error submitting job:', error);
-      setError('An error occurred while submitting the job.');
+      console.error('Error during registration or job creation:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   }
 
   const renderStep = () => {
     switch (step) {
       case 1:
-        return <Step1JobDetails onInputChange={handleInputChange} formData={formData.jobDetails} />
+        return <Step1JobDetails />
       case 2:
         return isAuthenticated ? (
           <motion.div
@@ -114,7 +96,7 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
             </button>
           </motion.div>
         ) : (
-          <RegisterClient onRegister={handleRegister} />
+          <RegisterClient />
         )
       default:
         return null

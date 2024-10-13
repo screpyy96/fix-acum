@@ -252,11 +252,10 @@ export default function ClientDashboard() {
             <h1 className="text-3xl font-bold text-gray-800">Welcome, {user?.name}</h1>
             <p className="text-gray-600">Manage your projects and workers</p>
           </div>
-          <NotificationBell />
+        
         </div>
 
-        <NotificationsList /> {/* Add the NotificationsList component here */}
-
+      
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="flex items-center">

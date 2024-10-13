@@ -1,39 +1,41 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
-  const { name, email, password } = await request.json();
+  const supabase = createRouteHandlerClient({ cookies });
 
   try {
-    // Înregistrează utilizatorul
-    const { data, error } = await supabase.auth.signUp({
+    const { email, password, name } = await request.json();
+
+    // Înregistrarea utilizatorului
+    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          name,
-          role: 'client',
-        },
-      },
     });
 
-    if (error) throw error;
+    if (signUpError) throw signUpError;
 
-    // Creează profilul
-    const { error: profileError } = await supabase
+    // Crearea sau actualizarea profilului
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        id: data.user.id,
+      .upsert({
+        id: user.id,
         name,
         email,
-        role: 'client',
-      });
+        role: 'client'
+      }, {
+        onConflict: 'id'
+      })
+      .select();
 
     if (profileError) throw profileError;
 
-    return NextResponse.json({ message: 'Client registered successfully' }, { status: 201 });
+    return NextResponse.json({ user: profileData[0] });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Error during registration:', error);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

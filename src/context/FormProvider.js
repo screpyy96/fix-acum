@@ -22,7 +22,7 @@ export const FormProvider = ({ children, initialTradeType, initialJobType }) => 
       projectStage: '',
       isAuthorized: '',
     },
-    clientData: {
+    userDetails: {  // Adăugăm această secțiune
       name: '',
       email: '',
       password: '',
@@ -121,7 +121,7 @@ export const FormProvider = ({ children, initialTradeType, initialJobType }) => 
       nextStep, 
       prevStep,
       submitFormData,
-      convertDateValue // Adăugați această funcție la context
+      convertDateValue
     }}>
       {children}
     </FormContext.Provider>

@@ -34,6 +34,7 @@ export function AuthProvider({ children }) {
 						fetchUserRole(session.user.id);
 					} else {
 						setUser(null);
+						setUserRole(null);
 					}
 				}
 			} catch (error) {
@@ -49,19 +50,13 @@ export function AuthProvider({ children }) {
 		getSession();
 
 		const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-			// console.log('Auth state changed:', event);
 			if (mounted) {
 				setSession(session);
 				if (session?.user) {
-					const { role, trade } = session.user.user_metadata;
-					setUser({ 
-						...session.user, 
-						role: role || 'user',
-						trade: trade || null 
-					});
-					fetchUserRole(session.user.id);
+					await fetchUserRole(session.user.id);
 				} else {
 					setUser(null);
+					setUserRole(null);
 				}
 				setLoading(false);
 			}
@@ -73,27 +68,31 @@ export function AuthProvider({ children }) {
 		};
 	}, []);
 
-	// console.log('Current state:', { session, user, loading });
-
 	const fetchUserRole = async (userId) => {
 		const { data, error } = await supabase
 			.from('profiles')
 			.select('role')
 			.eq('id', userId)
 			.single();
-		if (data) {
+		if (data && data.role) {
 			setUserRole(data.role);
+			// Actualizăm și user-ul cu noul rol
+			setUser(prevUser => ({ ...prevUser, role: data.role }));
+		} else if (error) {
+			console.error('Error fetching user role:', error);
 		}
 	};
 
 	const value = {
 		session,
 		user,
+		userRole,
 		loading,
 		signOut: async () => {
 			await supabase.auth.signOut();
 			setUser(null);
 			setSession(null);
+			setUserRole(null);
 		},
 		refreshSession: async () => {
 			const { data: { session }, error } = await supabase.auth.getSession();
@@ -109,8 +108,10 @@ export function AuthProvider({ children }) {
 					role: role || 'user',
 					trade: trade || null 
 				});
+				fetchUserRole(session.user.id);
 			} else {
 				setUser(null);
+				setUserRole(null);
 			}
 		},
 		signIn: async ({ email, password }) => {
@@ -120,12 +121,17 @@ export function AuthProvider({ children }) {
 					password,
 				});
 				if (error) throw error;
+				
+				// Preluăm rolul din profilul utilizatorului
+				await fetchUserRole(data.user.id);
+				
 				return { user: data.user };
 			} catch (error) {
 				console.error('Error signing in:', error);
 				throw error;
 			}
-		}
+		},
+		setUserRole // Adăugăm setUserRole în valoarea contextului
 	};
 
 	return (
