@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Messages from '@/components/messages/messages';
 import useAuth from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation'; // Import useRouter from 'next/router'
 
 export default function ConversationPage() {
   const params = useParams();
@@ -13,8 +14,14 @@ export default function ConversationPage() {
   const { user } = useAuth();
   const [jobDetails, setJobDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter(); // Initialize useRouter
 
   useEffect(() => {
+    if (!user) {
+      router.push('/');
+      return;
+    }
+
     if (jobId && user) {
       const fetchJobDetails = async () => {
         setIsLoading(true);
@@ -39,15 +46,10 @@ export default function ConversationPage() {
 
       fetchJobDetails();
     }
-  }, [jobId, user]);
+  }, [jobId, user, router]);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!jobDetails) {
-    return <div>Job not found or you don't have access to this conversation.</div>;
-  }
+  // Render nothing if user is null or jobDetails haven't loaded yet
+  if (!user || !jobDetails) return null;
 
   const workerId = jobDetails.job_applications[0]?.worker_id;
   const isClient = user.id === jobDetails.client_id;

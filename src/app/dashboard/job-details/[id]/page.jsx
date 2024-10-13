@@ -31,8 +31,10 @@ export default function JobDetails({ params }) {
     try {
       const { data, error } = await supabase
         .from('jobs')
-        // Această linie selectează toate câmpurile din tabelul 'jobs' și, în plus, include toate profilurile asociate cu fiecare client.
-        .select('*, client:profiles(*)')
+        .select(`
+          *,
+          client:profiles!jobs_client_id_fkey(*)
+        `)
         .eq('id', params.id)
         .single();
 
@@ -46,15 +48,16 @@ export default function JobDetails({ params }) {
 
   const checkApplicationStatus = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: existingApplications, error: checkError } = await supabase
         .from('job_applications')
         .select('*')
         .eq('job_id', params.id)
-        .eq('worker_id', user.id)
-        .single();
+        .eq('worker_id', user.id);
 
-      if (error && error.code !== 'PGRST116') throw error;
-      setHasApplied(!!data);
+      const existingApplication = existingApplications && existingApplications.length > 0 ? existingApplications[0] : null;
+
+      if (checkError && checkError.code !== 'PGRST116') throw checkError;
+      setHasApplied(!!existingApplication);
     } catch (error) {
       console.error('Error checking application status:', error);
     }
@@ -64,6 +67,31 @@ export default function JobDetails({ params }) {
     if (hasApplied) return;
     setIsApplying(true);
     try {
+      // Verifică dacă utilizatorul a aplicat deja
+      const { data: existingApplication, error: checkError } = await supabase
+        .from('job_applications')
+        .select('*')
+        .eq('job_id', params.id)
+        .eq('worker_id', user.id)
+        .single()
+        .then(response => {
+          if (response.error && response.error.code === 'PGRST116') {
+            // No result found, which is fine in this case
+            return { data: null, error: null };
+          }
+          return response;
+        });
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      if (existingApplication) {
+        toast.info('You have already applied to this job');
+        setHasApplied(true);
+        return;
+      }
+
       // Aplicare la job
       const { data: applicationData, error: applicationError } = await supabase
         .from('job_applications')
@@ -86,7 +114,7 @@ export default function JobDetails({ params }) {
       toast.success('Application submitted successfully!');
     } catch (error) {
       console.error('Error applying for job:', error);
-      toast.error('Failed to submit application');
+      toast.error('Failed to submit application: ' + error.message);
     } finally {
       setIsApplying(false);
     }

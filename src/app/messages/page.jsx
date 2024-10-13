@@ -17,72 +17,78 @@ export default function ConversationsPage() {
   const [unreadCounts, setUnreadCounts] = useState({});
 
   useEffect(() => {
-    if (user) {
-      const fetchConversations = async () => {
-        setIsLoading(true);
-        setError(null);
-
-        const { data: workerApps, error: workerError } = await supabase
-          .from('job_applications')
-          .select(`
-            job_id,
-            worker_id,
-            jobs (
-              title,
-              client_id
-            ),
-            profiles!job_applications_worker_id_fkey (
-              name
-            )
-          `)
-          .eq('worker_id', user.id);
-
-        const { data: clientApps, error: clientError } = await supabase
-          .from('job_applications')
-          .select(`
-            job_id,
-            worker_id,
-            jobs (
-              title,
-              client_id
-            ),
-            profiles!job_applications_worker_id_fkey (
-              name
-            )
-          `)
-          .eq('jobs.client_id', user.id);
-
-        if (workerError || clientError) {
-          console.error('Error fetching conversations:', workerError || clientError);
-          setError(workerError || clientError);
-        } else {
-          const allApps = [...(workerApps || []), ...(clientApps || [])];
-          const uniqueApps = allApps.filter((app, index, self) =>
-            index === self.findIndex((t) => t.job_id === app.job_id)
-          );
-          setConversations(uniqueApps);
-        }
-
-        // Fetch unread message counts using raw SQL
-        const { data: unreadData, error: unreadError } = await supabase
-          .rpc('get_unread_message_counts', { user_id: user.id });
-
-        if (unreadError) {
-          console.error('Error fetching unread counts:', unreadError);
-        } else {
-          const counts = {};
-          unreadData.forEach(item => {
-            counts[item.job_id] = parseInt(item.count);
-          });
-          setUnreadCounts(counts);
-        }
-
-        setIsLoading(false);
-      };
-
-      fetchConversations();
+    if (!user) {
+      router.push('/');
+      return; // Exit early if no user
     }
-  }, [user]);
+
+    const fetchConversations = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      const { data: workerApps, error: workerError } = await supabase
+        .from('job_applications')
+        .select(`
+          job_id,
+          worker_id,
+          jobs (
+            title,
+            client_id
+          ),
+          profiles!job_applications_worker_id_fkey (
+            name
+          )
+        `)
+        .eq('worker_id', user.id);
+
+      const { data: clientApps, error: clientError } = await supabase
+        .from('job_applications')
+        .select(`
+          job_id,
+          worker_id,
+          jobs (
+            title,
+            client_id
+          ),
+          profiles!job_applications_worker_id_fkey (
+            name
+          )
+        `)
+        .eq('jobs.client_id', user.id);
+
+      if (workerError || clientError) {
+        console.error('Error fetching conversations:', workerError || clientError);
+        setError(workerError || clientError);
+      } else {
+        const allApps = [...(workerApps || []), ...(clientApps || [])];
+        const uniqueApps = allApps.filter((app, index, self) =>
+          index === self.findIndex((t) => t.job_id === app.job_id)
+        );
+        setConversations(uniqueApps);
+      }
+
+      // Fetch unread message counts using raw SQL
+      const { data: unreadData, error: unreadError } = await supabase
+        .rpc('get_unread_message_counts', { user_id: user.id });
+
+      if (unreadError) {
+        console.error('Error fetching unread counts:', unreadError);
+      } else {
+        const counts = {};
+        unreadData.forEach(item => {
+          counts[item.job_id] = parseInt(item.count);
+        });
+        setUnreadCounts(counts);
+      }
+
+      setIsLoading(false);
+    };
+
+    fetchConversations();
+  }, [user, router]);
+
+  // Render nothing if user is null
+  if (!user) return null;
 
   const filteredConversations = conversations.filter(conv =>
     conv.jobs.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -120,7 +126,7 @@ export default function ConversationsPage() {
                     <div className="flex items-center px-4 py-4 sm:px-6">
                       <div className="min-w-0 flex-1 flex items-center">
                         <div className="flex-shrink-0">
-                          {conv.jobs.client_id === user.id ? (
+                          {conv.jobs.client_id === user?.id ? (
                             <User className="h-12 w-12 text-gray-400" />
                           ) : (
                             <Briefcase className="h-12 w-12 text-gray-400" />
@@ -137,7 +143,7 @@ export default function ConversationsPage() {
                           <div className="hidden md:block">
                             <div>
                               <p className="text-sm text-gray-900">
-                                {conv.jobs.client_id === user.id ? 'Worker' : 'Client'}
+                                {conv.jobs.client_id === user?.id ? 'Worker' : 'Client'}
                               </p>
                               <p className="mt-2 flex items-center text-sm text-gray-500">
                                 Job ID: {conv.job_id}

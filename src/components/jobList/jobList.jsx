@@ -1,70 +1,103 @@
-import React from 'react'
-import { FaEdit, FaTrash, FaUserCheck, FaUserCircle } from 'react-icons/fa'
+import React, { useState } from 'react'
 import Link from 'next/link'
+import { FaEdit, FaTrash, FaCheck } from 'react-icons/fa'
+import ReviewModal from '../reviews/reviewModal' // Vom crea acest component
 
-export default function JobList({ jobs, onEditJob, onDeleteJob, onAcceptWorker }) {
+export default function JobList({ jobs, onEditJob, onDeleteJob, onAcceptWorker, onCompleteJob, onReviewWorker }) {
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedJob, setSelectedJob] = useState(null)
+
+  const handleCompleteJob = (job) => {
+    setSelectedJob(job)
+    setShowReviewModal(true)
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="space-y-4">
       {jobs.map((job) => (
-        <div key={job.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">{job.title}</h2>
-            <p className="text-gray-600 mb-4 line-clamp-2">{job.description}</p>
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-green-600 font-semibold">${job.budget}</span>
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                job.status === 'open' ? 'bg-green-100 text-green-800' :
-                job.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {job.status}
-              </span>
-            </div>
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2 text-gray-700">Applicants:</h3>
-              {job.applicants && job.applicants.length > 0 ? (
-                <ul className="space-y-2">
-                  {job.applicants.map((applicant) => (
-                    <li key={applicant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <Link href={`/workers/${applicant.worker?.id}`} className="flex items-center text-blue-600 hover:text-blue-800">
-                        <FaUserCircle className="mr-2" />
-                        <span>{applicant.worker?.name || 'Unknown'}</span>
-                      </Link>
-                      {applicant.status === 'pending' && (
-                        <button
-                          onClick={() => onAcceptWorker(job.id, applicant.worker?.id)}
-                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full text-sm flex items-center"
-                        >
-                          <FaUserCheck className="mr-1" /> Accept
-                        </button>
-                      )}
-                      {applicant.status === 'accepted' && (
-                        <span className="text-green-600 font-semibold">Accepted</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 italic">No applicants yet.</p>
-              )}
-            </div>
+        <div key={job.id} className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-xl font-semibold mb-2">{job.title}</h3>
+          <p className="text-gray-600 mb-4">{job.description}</p>
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-sm text-gray-500">Budget: ${job.budget}</span>
+            <span className={`text-sm font-semibold ${job.status === 'open' ? 'text-green-500' : job.status === 'in-progress' ? 'text-blue-500' : 'text-purple-500'}`}>
+              {job.status}
+            </span>
           </div>
-          <div className="bg-gray-50 px-6 py-3 flex justify-end space-x-2">
-            <button
-              onClick={() => onEditJob(job)}
-              className="text-blue-600 hover:text-blue-800"
-            >
-              <FaEdit />
-            </button>
-            <button
-              onClick={() => onDeleteJob(job.id)}
-              className="text-red-600 hover:text-red-800"
-            >
-              <FaTrash />
-            </button>
+          <div className="flex justify-between items-center">
+            <div>
+              <button
+                onClick={() => onEditJob(job)}
+                className="text-blue-500 hover:text-blue-700 mr-2"
+              >
+                <FaEdit />
+              </button>
+              <button
+                onClick={() => onDeleteJob(job.id)}
+                className="text-red-500 hover:text-red-700"
+              >
+                <FaTrash />
+              </button>
+            </div>
+            {job.status === 'open' && job.job_applications && job.job_applications.length > 0 && (
+              <button
+                onClick={() => onAcceptWorker(job.id, job.job_applications[0].worker.id)}
+                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+              >
+                Accept Worker
+              </button>
+            )}
+            {job.status === 'in-progress' && (
+              <button
+                onClick={() => handleCompleteJob(job)}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+              >
+                <FaCheck className="mr-2" />
+                Complete Job
+              </button>
+            )}
           </div>
+          
+          {job.job_applications && job.job_applications.length > 0 ? (
+            <div className="mt-4">
+              <h4 className="text-lg font-semibold mb-2">Aplicanți:</h4>
+              <ul className="space-y-2">
+                {job.job_applications.map((application) => (
+                 
+                  <li key={application.job_id} className="flex items-center justify-between bg-gray-100 p-2 rounded">
+                    <Link href={`/workers/${application.worker.id}`} className="text-blue-600 hover:underline">
+                      {application.worker.name}
+                    </Link>
+                    <span className="text-sm text-gray-600">Status: {application.status}</span>
+                    {job.status === 'open' && application.status !== 'accepted' && (
+                      <button
+                        onClick={() => onAcceptWorker(job.id, application.worker.id)}
+                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded text-sm"
+                      >
+                        Accept
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="mt-4 text-gray-600 italic">Nu există aplicanți pentru acest job.</p>
+          )}
         </div>
       ))}
+      {showReviewModal && (
+        <ReviewModal
+          job={selectedJob}
+          onClose={() => setShowReviewModal(false)}
+          onSubmitReview={(rating, comment) => {
+            console.log('Review data in JobList:', { rating, comment }); // Pentru debugging
+            onCompleteJob(selectedJob.id);
+            onReviewWorker(selectedJob.id, selectedJob.job_applications[0].worker.id, rating, comment);
+            setShowReviewModal(false);
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -2,30 +2,63 @@
 
 import { useEffect, useState } from 'react';
 import { FaStar, FaTools, FaEnvelope, FaUser, FaBriefcase, FaCalendarAlt, FaPhone } from 'react-icons/fa';
+import { useParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
-export default function WorkerProfile({ params }) {
-  const { workerId } = params;
+export default function WorkerProfile() {
+  const { workerId } = useParams();
   const [worker, setWorker] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchWorkerProfile = async () => {
       try {
-        const response = await fetch(`/api/workers/${workerId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setWorker(data);
-        } else {
-          const errorData = await response.json();
-          setError(errorData.error || 'Failed to fetch worker profile');
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', workerId)
+          .single();
+
+        if (profileError) throw profileError;
+
+        const { data: reviews, error: reviewsError } = await supabase
+          .from('reviews')
+          .select(`
+            id,
+            rating,
+            comment,
+            created_at,
+            job:jobs(id, title),
+            client:profiles!reviews_client_id_fkey(id, name)
+          `)
+          .eq('worker_id', workerId);
+
+        if (reviewsError) throw reviewsError;
+
+        // Calculăm average rating
+        let averageRating = 0;
+        if (reviews && reviews.length > 0) {
+          const totalRating = reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+          averageRating = totalRating / reviews.length;
         }
+
+        console.log('Worker profile:', JSON.stringify(profile, null, 2));
+        console.log('Worker reviews:', JSON.stringify(reviews, null, 2));
+        console.log('Average rating:', averageRating);
+
+        setWorker({ ...profile, reviews, averageRating });
       } catch (err) {
+        console.error('Error fetching worker profile:', err);
         setError('Error fetching worker profile');
       }
     };
 
-    fetchWorkerProfile();
-  }, [workerId]);
+    if (workerId) {
+      fetchWorkerProfile();
+    }
+  }, [workerId]); // Dependența este workerId
+
+
 
   if (error) {
     return <p className="text-red-500 text-center mt-10">{error}</p>;
@@ -34,7 +67,7 @@ export default function WorkerProfile({ params }) {
   if (!worker) {
     return <p className="text-center mt-10">Loading...</p>;
   }
-
+  console.log(worker);
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -43,10 +76,14 @@ export default function WorkerProfile({ params }) {
             <h1 className="text-3xl font-bold flex items-center">
               <FaUser className="mr-2" /> {worker.name}
             </h1>
-            <div className="flex items-center">
-              <FaStar className="text-yellow-300 mr-1" />
-              <span className="text-xl font-semibold">{worker.averageRating.toFixed(1)}</span>
-            </div>
+            {worker && worker.averageRating != null && (
+              <div className="flex items-center">
+                <FaStar className="text-yellow-300 mr-1" />
+                <span className="text-xl font-semibold">
+                  {worker.averageRating.toFixed(1)}
+                </span>
+              </div>
+            )}
           </div>
           <p className="mt-2 flex items-center">
             <FaTools className="mr-2" /> {worker.trade}
@@ -96,25 +133,37 @@ export default function WorkerProfile({ params }) {
             </div>
           )}
 
-          {worker.reviews && worker.reviews.length > 0 && (
+          {worker.reviews && worker.reviews.length > 0 ? (
             <div className="mt-6">
-              <h2 className="text-xl font-semibold mb-4">Reviews</h2>
-              <div className="space-y-4">
-                {worker.reviews.map((review, index) => (
-                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <div className="flex text-yellow-400 mr-2">
-                        {[...Array(5)].map((_, i) => (
-                          <FaStar key={i} className={i < review.rating ? "text-yellow-400" : "text-gray-300"} />
-                        ))}
-                      </div>
-                      <span className="text-gray-600">{review.rating.toFixed(1)} / 5</span>
+              <h3 className="text-xl font-semibold mb-4">Reviews</h3>
+              {worker.reviews.map((review, index) => (
+                <div key={index} className="bg-white p-4 rounded-lg shadow mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <FaStar
+                          key={i}
+                          className={i < Math.round(review.rating || 0) ? "text-yellow-400" : "text-gray-300"}
+                        />
+                      ))}
+                      <span className="ml-2 text-gray-600">
+                        {review.rating != null ? review.rating.toFixed(1) : 'N/A'} / 5
+                      </span>
                     </div>
-                    <p className="text-gray-700">{review.review}</p>
+                    <span className="text-sm text-gray-500">
+                      {new Date(review.created_at).toLocaleDateString()}
+                    </span>
                   </div>
-                ))}
-              </div>
+                  <p className="text-gray-700 mb-2">{review.comment || 'No comment provided.'}</p>
+                  <div className="text-sm text-gray-600">
+                    <p>Client: {review.client?.name || 'Anonymous'}</p>
+                    <p>Job: {review.job?.title || 'Untitled Job'}</p>
+                  </div>
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="mt-6 text-gray-600">No reviews yet.</p>
           )}
         </div>
       </div>

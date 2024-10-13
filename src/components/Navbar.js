@@ -7,8 +7,10 @@ import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import LogoutButton from './logoutBtn';
 
 import MessageNotifications from './notifications/messageNotifications'
+
 const Navbar = () => {
   const { user, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -23,13 +25,6 @@ const Navbar = () => {
       router.push('/dashboard/worker');
     }
     setIsOpen(false);
-  };
-
-  const handleLogout = async (e) => {
-    e.preventDefault();
-    await supabase.auth.signOut();
-    setIsOpen(false);
-    router.push('/');
   };
 
   const navItems = [
@@ -94,7 +89,7 @@ const Navbar = () => {
             </motion.span>
           </Link>
           <Link
-            href="/register/client"
+            href="/register/worker"
             className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
             onClick={() => setIsOpen(false)}
           >
@@ -120,7 +115,7 @@ const Navbar = () => {
           { name: 'Setări', icon: Settings, onClick: (e) => { e.preventDefault(); router.push('/settings'); setIsOpen(false); } },
           { name: 'Notificări', icon: Bell, onClick: (e) => { e.preventDefault(); router.push('/notifications'); setIsOpen(false); } },
           { name: 'Mesaje', component: <MessageNotifications />, href: '/messages' },
-          { name: 'Logout', icon: LogOut, onClick: handleLogout },
+          { name: 'Logout', component: <LogoutButton /> }, // Înlocuiți această linie
         ]
       : [];
 
@@ -132,23 +127,39 @@ const Navbar = () => {
             className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
           >
             {item.component ? (
-              <Link
-                href={item.href || "/notifications"}
-                className="flex items-center w-full py-2 cursor-pointer text-white hover:text-yellow-300 transition-colors duration-200"
-                onClick={() => setIsOpen(false)}
-              >
-                <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
-                  {item.component}
+              item.name === 'Logout' ? (
+                <div className="flex items-center w-full py-2">
+                  <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+                    <LogOut className="h-6 w-6" />
+                  </div>
+                  <motion.span
+                    className="ml-4 whitespace-nowrap"
+                    initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
+                    animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {item.component}
+                  </motion.span>
                 </div>
-                <motion.span
-                  className="ml-4 whitespace-nowrap text-sm"
-                  initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
-                  animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
-                  transition={{ duration: 0.2 }}
+              ) : (
+                <Link
+                  href={item.href || "/notifications"}
+                  className="flex items-center w-full py-2 cursor-pointer text-white hover:text-yellow-300 transition-colors duration-200"
+                  onClick={() => setIsOpen(false)}
                 >
-                  {item.name}
-                </motion.span>
-              </Link>
+                  <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+                    {item.component}
+                  </div>
+                  <motion.span
+                    className="ml-4 whitespace-nowrap text-sm"
+                    initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
+                    animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {item.name}
+                  </motion.span>
+                </Link>
+              )
             ) : item.onClick ? (
               <button 
                 className="flex items-center w-full py-1 cursor-pointer" 

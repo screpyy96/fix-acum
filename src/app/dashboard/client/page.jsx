@@ -11,11 +11,12 @@ import { FaPlus, FaChartBar, FaUser, FaCheckCircle } from 'react-icons/fa'
 import { createNotification } from '@/lib/notifications'
 import NotificationBell from '@/components/notifications/notifications'
 import NotificationsList from '@/components/notifications/notificationList'
+import { toast } from 'react-toastify'
 
 export default function ClientDashboard() {
   const { user } = useAuth()
   const [jobs, setJobs] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editingJob, setEditingJob] = useState(null)
   const [stats, setStats] = useState({ totalJobs: 0, activeJobs: 0, completedJobs: 0 })
@@ -30,29 +31,35 @@ export default function ClientDashboard() {
   }, [user, router])
 
   const fetchClientData = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('jobs')
-        .select(`
+      const { data: jobsData, error: jobsError } = await supabase
+      .from('jobs')
+      .select(`
+        *,
+        job_applications(
           *,
-          applicants:job_applications(
-            id,
-            status,
-            worker:profiles(id, name)
-          )
-        `)
-        .eq('client_id', user.id)
-        .order('created_at', { ascending: false })
+          worker:profiles(*)
+        )
+      `)
+      .eq('client_id', user.id)
+      .order('created_at', { ascending: false });
 
-      if (error) throw error
-      setJobs(data)
-      updateStats(data)
+      if (jobsError) throw jobsError;
+
+      const jobsWithReviewStatus = jobsData.map(job => ({
+        ...job,
+        has_review: job.reviews && job.reviews.length > 0
+      }));
+
+      setJobs(jobsWithReviewStatus);
+      updateStats(jobsData);
     } catch (error) {
-      console.error('Error fetching client data:', error)
-      setError('Failed to load data')
+      console.error('Error fetching client data:', error);
+      setError('Failed to load data');
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -89,18 +96,56 @@ export default function ClientDashboard() {
   }
 
   const handleDeleteJob = async (jobId) => {
+    if (!confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const { error } = await supabase
+      // Verifică dacă jobul aparține clientului curent
+      const { data: jobData, error: jobError } = await supabase
+        .from('jobs')
+        .select('client_id, status')
+        .eq('id', jobId)
+        .single();
+
+      if (jobError) throw jobError;
+
+      if (jobData.client_id !== user.id) {
+        throw new Error('You are not authorized to delete this job');
+      }
+
+      if (jobData.status !== 'open') {
+        throw new Error('You can only delete open jobs');
+      }
+
+      // Șterge mai întâi aplicațiile asociate
+      const { error: applicationsError } = await supabase
+        .from('job_applications')
+        .delete()
+        .eq('job_id', jobId);
+
+      if (applicationsError) {
+        console.error('Error deleting job applications:', applicationsError);
+        // Continuăm cu ștergerea jobului chiar dacă ștergerea aplicațiilor eșuează
+      }
+
+      // Apoi șterge jobul
+      const { error: jobDeleteError } = await supabase
         .from('jobs')
         .delete()
-        .eq('id', jobId)
+        .eq('id', jobId);
 
-      if (error) throw error
+      if (jobDeleteError) throw jobDeleteError;
 
-      setJobs(jobs.filter(job => job.id !== jobId))
-      fetchClientData() // Refresh data to update stats
+      setJobs(jobs.filter(job => job.id !== jobId));
+      fetchClientData(); // Refresh data to update stats
+      toast.success('Job deleted successfully');
     } catch (error) {
-      console.error('Error deleting job:', error)
+      console.error('Error deleting job:', error.message);
+      toast.error(`Failed to delete job: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -142,8 +187,62 @@ export default function ClientDashboard() {
     }
   }
 
-  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>
-  if (error) return <div className="text-red-500 text-center">Error: {error}</div>
+  const handleJobUpdate = () => {
+    fetchClientData();
+  };
+
+  const handleCompleteJob = async (jobId) => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: 'completed' })
+        .eq('id', jobId);
+
+      if (error) throw error;
+
+      fetchClientData(); // Reîmprospătăm datele pentru a actualiza starea joburilor
+    } catch (error) {
+      console.error('Error completing job:', error);
+      // Adăugați o notificare de eroare pentru utilizator
+    }
+  };
+
+  const handleReviewWorker = async (jobId, workerId, rating, comment) => {
+    try {
+      console.log('Submitting review to Supabase:', { jobId, workerId, rating, comment }); // Pentru debugging
+
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert({
+          job_id: jobId,
+          worker_id: workerId,
+          client_id: user.id, // Presupunând că ai acces la ID-ul clientului curent
+          rating: rating,
+          comment: comment,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      console.log('Review submitted successfully:', data); // Pentru debugging
+
+      // Creăm o notificare pentru worker
+      await createNotification(
+        workerId,
+        'new_review',
+        `You've received a new review for the job you completed.`
+      );
+
+      fetchClientData(); // Reîmprospătăm datele pentru a include noul review
+      toast.success('Review submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast.error('Failed to submit review: ' + error.message);
+    }
+  };
+
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -187,6 +286,8 @@ export default function ClientDashboard() {
           onEditJob={handleEditJob} 
           onDeleteJob={handleDeleteJob}
           onAcceptWorker={handleAcceptWorker}
+          onCompleteJob={handleCompleteJob}
+          onReviewWorker={handleReviewWorker}
         />
         {editingJob && (
           <EditJobModal 

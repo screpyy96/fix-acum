@@ -1,43 +1,36 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export async function GET(request, { params }) {
   const { workerId } = params;
 
   try {
-    const { data: worker, error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select(`
         *,
-        reviews:reviews(*)
+        reviews:reviews!reviews_worker_id_fkey(rating)
       `)
       .eq('id', workerId)
       .single();
 
     if (error) throw error;
 
-    if (!worker) {
+    if (!data) {
       return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
     }
 
-    // Calculează rating-ul mediu
-    const reviews = worker.reviews || [];
-    const averageRating = reviews.length > 0
-      ? reviews.reduce((acc, review) => acc + (review.rating || 0), 0) / reviews.length
-      : 0;
+    // Calculați media rating-urilor
+    if (data.reviews && data.reviews.length > 0) {
+      const ratings = data.reviews.map(review => review.rating);
+      data.averageRating = ratings.reduce((a, b) => a + b) / ratings.length;
+    } else {
+      data.averageRating = null;
+    }
 
-    // Formatează datele pentru a se potrivi cu structura așteptată de componenta de profil
-    const formattedWorker = {
-      ...worker,
-      averageRating,
-      completedJobs: worker.completed_jobs || 0,
-      availability: worker.availability || 'Not specified',
-      skills: worker.skills || [],
-      experience: worker.experience || 'Not specified',
-      reviews: reviews
-    };
-
-    return NextResponse.json(formattedWorker);
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching worker profile:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

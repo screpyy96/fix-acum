@@ -131,7 +131,7 @@ export default function Messages({ jobId, workerId }) {
         sender_id: user.id,
         content: newMessage,
         worker_id: workerId,
-        is_read: false // Setăm mesajul ca necitit inițial
+        is_read: false
       })
       .select();
 
@@ -141,6 +141,7 @@ export default function Messages({ jobId, workerId }) {
       setMessages(prevMessages => 
         prevMessages.map(msg => msg.id === data[0].id ? { ...data[0], status: 'sent' } : msg)
       );
+      setNewMessage(''); // Clear the input field after sending
     }
   };
 
@@ -176,7 +177,7 @@ export default function Messages({ jobId, workerId }) {
                 setNewMessage(e.target.value);
                 sendTypingIndicator();
               }}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   sendMessage();
                 }
