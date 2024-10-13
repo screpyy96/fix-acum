@@ -1,5 +1,5 @@
 
-import { Home, Briefcase, User, MessageSquare, Star, Settings } from 'lucide-react';
+import { Home, Briefcase, User, Star, Settings } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -7,7 +7,7 @@ const tabItems = [
   { name: 'Overview', icon: Home },
   { name: 'Jobs', icon: Briefcase },
   { name: 'Profile', icon: User },
-  { name: 'Messages', icon: MessageSquare },
+ 
   { name: 'Reviews', icon: Star },
   { name: 'Settings', icon: Settings },
 ];

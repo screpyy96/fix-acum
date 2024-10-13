@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import Overview from '@/components/worker/Overview';
 import JobsList from '@/components/worker/JobList';
 import Profile from '@/components/worker/Profile';
-import Messages from '@/components/worker/Messages';
+
 import Reviews from '@/components/worker/Reviews';
 import Settings from '@/components/worker/Settings';
 
@@ -34,8 +34,6 @@ export default function WorkerDashboard() {
         return <JobsList workerId={user.id} />;
       case 'Profile':
         return <Profile workerData={user} />;
-      case 'Messages':
-        return <Messages workerId={user.id} />;
       case 'Reviews':
         return <Reviews workerId={user.id} />;
       case 'Settings':
