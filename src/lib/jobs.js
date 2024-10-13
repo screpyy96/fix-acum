@@ -2,7 +2,6 @@ import { supabase } from './supabase';
 import { createNotification } from './notifications';
 
 export async function applyToJob(jobId, workerId) {
-  // Logica existentă pentru aplicare la job
   const { data, error } = await supabase
     .from('job_applications')
     .insert({ job_id: jobId, worker_id: workerId });
@@ -12,10 +11,9 @@ export async function applyToJob(jobId, workerId) {
     return null;
   }
 
-  // Obțineți ID-ul clientului pentru acest job
   const { data: job } = await supabase
     .from('jobs')
-    .select('client_id')
+    .select('client_id, title')
     .eq('id', jobId)
     .single();
 
@@ -23,7 +21,7 @@ export async function applyToJob(jobId, workerId) {
     await createNotification(
       job.client_id,
       'job_application',
-      `Un nou worker a aplicat la jobul tău.`
+      `Un nou worker a aplicat la jobul tău: ${job.title}`
     );
   }
 

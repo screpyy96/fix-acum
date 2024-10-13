@@ -1,11 +1,15 @@
+// src/components/NotificationBell.js
 import React, { useState, useEffect } from 'react';
+import { Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { getNotifications, markNotificationAsRead } from '@/lib/notifications';
+import { getNotifications } from '@/lib/notifications';
 import useAuth from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
-export default function Notifications() {
+export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const { user } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (user) {
@@ -16,41 +20,49 @@ export default function Notifications() {
 
       fetchNotifications();
 
-      // Setați un listener pentru notificări noi
-      const subscription = supabase
-        .from(`notifications:user_id=eq.${user.id}`)
-        .on('INSERT', payload => {
+      const channel = supabase
+        .channel(`public:notifications:user_id=eq.${user.id}`)
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        }, payload => {
           setNotifications(current => [payload.new, ...current]);
         })
         .subscribe();
 
       return () => {
-        supabase.removeSubscription(subscription);
+        supabase.removeChannel(channel);
       };
     }
   }, [user]);
 
-  const handleNotificationClick = async (notificationId) => {
-    await markNotificationAsRead(notificationId);
-    setNotifications(current =>
-      current.map(notif =>
-        notif.id === notificationId ? { ...notif, is_read: true } : notif
-      )
-    );
-    // Aici puteți adăuga logica pentru a deschide chat-ul sau a naviga la o pagină specifică
+  const handleBellClick = () => {
+    if (user?.role === 'client') {
+      router.push('/dashboard/client');
+    } else if (user?.role === 'worker') {
+      router.push('/dashboard/worker');
+    }
   };
 
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
   return (
-    <div>
-      {notifications.map(notification => (
-        <div 
-          key={notification.id} 
-          onClick={() => handleNotificationClick(notification.id)}
-          className={`p-2 mb-2 rounded ${notification.is_read ? 'bg-gray-100' : 'bg-blue-100'}`}
-        >
-          {notification.content}
+    <div className="relative">
+      <button
+        onClick={handleBellClick}
+        className="flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
+      >
+        <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
+          <Bell className="h-5 w-5" />
         </div>
-      ))}
+        {unreadCount > 0 && (
+          <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+            {unreadCount}
+          </span>
+        )}
+      </button>
     </div>
   );
 }

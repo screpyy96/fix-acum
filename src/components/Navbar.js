@@ -1,49 +1,20 @@
 'use client'
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import useAuth from '@/hooks/useAuth';
+import {useAuth} from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { getNotifications, markNotificationAsRead } from '@/lib/notifications';
+import NotificationBell from './notifications/notifications';
 
 const Navbar = () => {
   const { user, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    if (user) {
-      const fetchNotifications = async () => {
-        const data = await getNotifications(user.id);
-        if (data) setNotifications(data);
-      };
-
-      fetchNotifications();
-
-      const channel = supabase
-        .channel(`public:notifications:user_id=eq.${user.id}`)
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        }, payload => {
-          setNotifications(current => [payload.new, ...current]);
-        })
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [user]);
 
   const handleDashboardRedirect = (e) => {
     e.preventDefault();
@@ -93,7 +64,8 @@ const Navbar = () => {
   );
 
   const renderAuthItems = (isMobile = false) => {
-    if (loading || !user) {
+    if (loading) {
+      // While loading, you might want to show a loading indicator or skeleton
       return (
         <div className="flex flex-col space-y-4">
           <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
@@ -103,16 +75,57 @@ const Navbar = () => {
       );
     }
 
+    if (!user) {
+      // Show login and sign-up options when not logged in
+      return (
+        <div className={`flex flex-col ${isMobile ? "space-y-4" : "space-y-2"}`}>
+          <Link
+            href="/login"
+            className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
+            onClick={() => setIsOpen(false)}
+          >
+            <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+              <User className="h-6 w-6" />
+            </div>
+            <motion.span
+              className="ml-4 whitespace-nowrap"
+              initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
+              animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              Log In
+            </motion.span>
+          </Link>
+          <Link
+            href="/register/client"
+            className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
+            onClick={() => setIsOpen(false)}
+          >
+            <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+              <Users className="h-6 w-6" />
+            </div>
+            <motion.span
+              className="ml-4 whitespace-nowrap"
+              initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
+              animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              Sign Up
+            </motion.span>
+          </Link>
+        </div>
+      );
+    }
+
+    // Render authenticated user items
     const authItems = user
       ? [
           { name: 'Dashboard', icon: User, onClick: handleDashboardRedirect },
           { name: 'Setări', icon: Settings, onClick: (e) => { e.preventDefault(); router.push('/settings'); setIsOpen(false); } },
+          { name: 'Notificări', icon: Bell, component: <NotificationBell /> },
           { name: 'Logout', icon: LogOut, onClick: handleLogout },
         ]
-      : [ 
-          { name: 'Log In', icon: User, href: '/login' },
-          { name: 'Sign Up', icon: Users, href: '/register/client' },
-        ];
+      : [];
 
     return (
       <div className={`flex flex-col ${isMobile ? "space-y-4" : "space-y-2"}`}>
@@ -121,7 +134,19 @@ const Navbar = () => {
             key={index} 
             className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
           >
-            {item.onClick ? (
+            {item.component ? (
+              <div className="flex items-center">
+                {item.component}
+                <motion.span
+                  className="ml-4 whitespace-nowrap"
+                  initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
+                  animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {item.name}
+                </motion.span>
+              </div>
+            ) : item.onClick ? (
               <button 
                 className="flex items-center w-full py-1" 
                 onClick={item.onClick}
@@ -163,61 +188,6 @@ const Navbar = () => {
     );
   };
 
-
-  const handleNotificationClick = async (notification) => {
-    try {
-      await markNotificationAsRead(notification.id);
-      setNotifications(current =>
-        current.map(notif =>
-          notif.id === notification.id ? { ...notif, is_read: true } : notif
-        )
-      );
-      setShowNotifications(false);
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  const renderNotifications = () => (
-    <div className="relative">
-      <button
-        onClick={() => setShowNotifications(!showNotifications)}
-        className="flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
-      >
-        <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
-          <Bell className="h-5 w-5" />
-        </div>
-        {notifications.filter(n => !n.is_read).length > 0 && (
-          <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-            {notifications.filter(n => !n.is_read).length}
-          </span>
-        )}
-      </button>
-      {showNotifications && (
-        <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg overflow-hidden z-50">
-          {notifications.length > 0 ? (
-            notifications.map(notification => (
-              <div
-                key={notification.id}
-                className={`p-2 hover:bg-gray-100 cursor-pointer ${notification.is_read ? 'bg-gray-50' : 'bg-blue-50'}`}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <p className="text-sm text-gray-800">{notification?.content}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {new Date(notification.created_at).toLocaleString()}
-                </p>
-              </div>
-            ))
-          ) : (
-            <div className="p-2 text-center text-gray-500">Nu există notificări</div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
-
-
   return (
     <>
       <motion.nav 
@@ -247,9 +217,9 @@ const Navbar = () => {
           <div className="flex-grow">
             {renderNavItems()}
           </div>
-          <div className="mt-auto">
+          <div className="mt-auto flex items-center space-x-4">
+           
             {renderAuthItems()}
-            {user && renderNotifications()}
           </div>
         </div>
       </motion.nav>
