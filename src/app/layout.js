@@ -1,8 +1,8 @@
-import "./globals.css";
 import React from 'react';
 import { AuthProvider } from '@/context/AuthContext';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import Navbar from '@/components/Navbar';
+import "./globals.css";
 
 export const metadata = {
   title: "Fix Acum",

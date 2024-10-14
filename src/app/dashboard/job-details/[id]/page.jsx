@@ -15,7 +15,7 @@ export default function JobDetails({ params }) {
   const [job, setJob] = useState(null);
   const [hasApplied, setHasApplied] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [reviews, setReviews] = useState([]); // State for reviews
+
 
   useEffect(() => {
     if (!loading) {
@@ -42,7 +42,7 @@ export default function JobDetails({ params }) {
 
       if (error) throw error;
       setJob(data);
-      setReviews(data.reviews); // Setează recenziile
+
     } catch (error) {
       console.error('Error fetching job details:', error);
       toast.error('Failed to load job details');
@@ -51,15 +51,15 @@ export default function JobDetails({ params }) {
 
   const checkApplicationStatus = async () => {
     try {
-      const { data: existingApplications, error: checkError } = await supabase
+      const { data: existingApplications, error } = await supabase
         .from('job_applications')
         .select('*')
         .eq('job_id', params.id)
         .eq('worker_id', user.id);
-
+  
+      if (error) throw error;
+  
       const existingApplication = existingApplications && existingApplications.length > 0 ? existingApplications[0] : null;
-
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
       setHasApplied(!!existingApplication);
     } catch (error) {
       console.error('Error checking application status:', error);

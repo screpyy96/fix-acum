@@ -6,12 +6,11 @@ import useAuth from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import JobList from '@/components/jobList/jobList'
 import EditJobModal from '@/components/jobModal/jobModal'
-import { FaPlus, FaChartBar, FaUser, FaCheckCircle } from 'react-icons/fa'
+import {  FaChartBar, FaUser, FaCheckCircle } from 'react-icons/fa'
 
 import { createNotification } from '@/lib/notifications'
-import NotificationBell from '@/components/notifications/notifications'
-import NotificationsList from '@/components/notifications/notificationList'
-import { toast } from 'react-toastify'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function ClientDashboard() {
   const { user } = useAuth()
@@ -295,6 +294,7 @@ export default function ClientDashboard() {
             onUpdate={handleUpdateJob} 
           />
         )}
+        <ToastContainer />
       </div>
     </div>
   )

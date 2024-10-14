@@ -12,37 +12,32 @@ export default function JobsList() {
   const router = useRouter();
 
   useEffect(() => {
-    console.log('User Trade:', userTrade); // Verifică valoarea lui userTrade
-    if (user) {
-      fetchJobs();
-    }
-  }, [user, userTrade]); // Adaugă userTrade ca dependență
+    const fetchJobs = async () => {
+      if (!user || !userTrade) return;
 
-  const fetchJobs = async () => {
-    console.log('Fetching jobs...', user);
-    if (!user || !userTrade) {
-      console.log('User or trade is missing:', userTrade);
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('status', 'open')
+        .eq('tradeType', userTrade);
+
+      if (error) {
+        console.error('Error fetching jobs:', error);
+      } else {
+        setJobs(data);
+      }
       setLoading(false);
-      return;
-    }
+    };
 
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('status', 'open')
-      .eq('tradeType', userTrade) // Filtrare după tradeType
-      // .order('created_at', { ascending: false });
+    fetchJobs();
 
+    // Set up polling to fetch jobs every 30 seconds
+    const interval = setInterval(fetchJobs, 30000);
 
-
-    if (error) {
-      console.error('Error fetching jobs:', error);
-    } else {
-      setJobs(data);
-    }
-    setLoading(false);
-  };
+    // Clean up the interval on component unmount
+    return () => clearInterval(interval);
+  }, [user, userTrade]);
 
   const handleJobClick = (jobId) => {
     router.push(`/dashboard/job-details/${jobId}`);
@@ -54,7 +49,7 @@ export default function JobsList() {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Lucrări pentru {user?.trade}</h2>
+      <h2 className="text-2xl font-bold mb-4">Lucrări pentru {userTrade}</h2>
       {jobs.length === 0 ? (
         <p>No available jobs found for your trade type.</p>
       ) : (
@@ -68,6 +63,9 @@ export default function JobsList() {
               <h3 className="text-xl font-semibold">{job.title}</h3>
               <p className="text-gray-600">{job.description}</p>
               <p className="text-sm text-gray-500">Price: ${job.price}</p>
+              {job.job_applications && job.job_applications.some(application => application.worker.id === worker.id) && (
+                <p className="text-sm text-red-500">You have already applied to this job.</p>
+              )}
             </li>
           ))}
         </ul>
