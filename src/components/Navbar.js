@@ -7,6 +7,7 @@ import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 
+
 import LogoutButton from './logoutBtn';
 
 import MessageNotifications from './notifications/messageNotifications'

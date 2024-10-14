@@ -9,11 +9,10 @@ const LogoutButton = () => {
   const handleLogout = async () => {
     await signOut();
     // Adăugăm o mică întârziere înainte de redirecționare
-    setTimeout(() => {
+   
       router.push('/');
       // Forțăm o reîncărcare completă a paginii
-      window.location.reload();
-    }, 100);
+  
   };
 
   return (

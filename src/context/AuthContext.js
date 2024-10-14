@@ -42,23 +42,46 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }
 
-  const signUp = async (data) => {
-    setLoading(true);
-    const { error } = await supabase.auth.signUp(data);
-    if (!error) {
-      console.log('Înregistrare reușită. Verifică emailul pentru confirmare.');
+  const signUp = async ({ email, password, options }) => {
+    const { data, error } = await supabase.auth.signUp({ email, password, options });
+    if (error) throw error;
+
+    // După înregistrare, salvează datele în tabelul profiles
+    const { user } = data;
+
+    // Asigură-te că user este definit
+    if (user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: user.id, // Asigură-te că folosești ID-ul corect
+            name: options.data.name, // Numele utilizatorului
+            role: options.data.role, // Rolul utilizatorului
+            trade: options.data.trade, // Meseria utilizatorului (dacă este necesar)
+			
+          }
+        ]);
+
+      if (profileError) {
+        console.error('Error saving profile:', profileError);
+        throw profileError; // Aruncă eroarea pentru a fi gestionată mai sus
+      }
     }
-    setLoading(false);
-    return { error };
+
+    setUser(user);
+    await fetchUserRole(user.id); // Obține rolul utilizatorului
+    return { user };
   };
 
   const signOut = async () => {
-    setLoading(true);
     await supabase.auth.signOut();
+    console.log('User signed out, checking session...');
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('Current session after sign out:', session);
     setUser(null);
     setUserRole(null);
     router.push('/');
-    setLoading(false);
   };
 
   const signIn = async ({ email, password }) => {

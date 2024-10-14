@@ -17,11 +17,13 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
   const { isAuthenticated } = useAuth()
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Previne reîncărcarea paginii
     setLoading(true);
     setError(null);
 
     try {
+      // Verifică dacă utilizatorul este autentificat
       if (!isAuthenticated) {
         // Înregistrarea utilizatorului folosind Supabase
         const { data: { user }, error: signUpError } = await supabase.auth.signUp({
@@ -42,10 +44,20 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
           });
 
         if (profileError) throw profileError;
+
+        // Deconectează utilizatorul imediat după înregistrare
+        await supabase.auth.signOut();
       }
 
-      // Obținem ID-ul utilizatorului curent
-      const { data: { user } } = await supabase.auth.getUser();
+      // Acum, autentifică utilizatorul înainte de a crea jobul
+      const { data: { user } } = await supabase.auth.signInWithPassword({
+        email: formData.userDetails.email,
+        password: formData.userDetails.password,
+      });
+
+      if (!user) {
+        throw new Error('Autentificare eșuată. Te rugăm să încerci din nou.');
+      }
 
       // Crearea job-ului
       const { error: jobError } = await supabase
