@@ -18,6 +18,7 @@ export default function RootLayout({ children }) {
             <Navbar />
             <main className="flex-1 w-full transition-all duration-300 ease-in-out md:pl-[2rem] lg:pl-[4rem]">
               {children}
+              <SpeedInsights />
             </main>
           </div>
         </AuthProvider>

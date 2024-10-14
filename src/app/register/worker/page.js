@@ -5,6 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 const trades = [
@@ -30,21 +31,41 @@ export default function RegisterWorker() {
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema)
   });
+  const { signUp } = useAuth();
 
   const onSubmit = async (data) => {
     try {
-      const { error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            name: data.name,
-            role: 'worker',
-            trade: data.trade
+      let authError;
+      if (signUp) {
+        // Folosește signUp din context dacă există
+        const result = await signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              name: data.name,
+              role: 'worker',
+              trade: data.trade
+            }
           }
-        }
-      });
-  
+        });
+        authError = result.error;
+      } else {
+        // Altfel, folosește direct Supabase
+        const { error } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              name: data.name,
+              role: 'worker',
+              trade: data.trade
+            }
+          }
+        });
+        authError = error;
+      }
+
       if (authError) {
         if (authError.message.includes('User already registered')) {
           setError('Acest email este deja înregistrat.');
@@ -53,7 +74,7 @@ export default function RegisterWorker() {
         }
         return;
       }
-  
+
       // Succes - redirecționăm către login sau o pagină de confirmare
       console.log('Înregistrare reușită! Te rugăm să-ți verifici emailul pentru confirmare.');
       router.push('/login');

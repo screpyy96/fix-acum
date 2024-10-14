@@ -1,62 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/lib/supabase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, user, userRole, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user && userRole) {
+      redirectBasedOnRole(userRole);
+    }
+  }, [user, userRole, loading]);
+
+  const redirectBasedOnRole = (role) => {
+    switch (role) {
+      case 'client':
+        router.push('/dashboard/client');
+        break;
+      case 'worker':
+        router.push('/dashboard/worker');
+        break;
+      default:
+        router.push('/');
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
-
     try {
-      const { user } = await signIn({ email, password });
-      
-      if (user) {
-        // Forțăm o reîncărcare a sesiunii
-        await supabase.auth.getSession();
-        
-        // Obținem rolul utilizatorului din tabelul profiles
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-
-        const userRole = data?.role;
-
-        switch (userRole) {
-          case 'client':
-            router.push('/dashboard/client');
-            break;
-          case 'worker':
-            router.push('/dashboard/worker');
-            break;
-          default:
-            router.push('/');
-        }
-      } else {
-        throw new Error('Login failed');
-      }
+      await signIn({ email, password });
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'An error occurred during login');
-    } finally {
-      setIsLoading(false);
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (user && userRole) {
+    return <div>Redirecting...</div>;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
