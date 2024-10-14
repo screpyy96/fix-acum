@@ -56,6 +56,8 @@ const Navbar = () => {
           <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
           <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
           <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
+          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
+          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
         </div>
       );
     }

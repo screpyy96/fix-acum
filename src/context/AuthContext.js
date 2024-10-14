@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
       Cookies.set('user', JSON.stringify({
         id: session.user.id, 
         email: session.user.email, 
-        role: data?.role, 
+        role: data?.user_metadata?.role, 
         trade: data?.user_metadata?.trade
       }), { expires: 7 });
     } else if (event === 'SIGNED_OUT') {
