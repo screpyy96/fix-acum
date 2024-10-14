@@ -48,8 +48,8 @@ const RegisterClient = () => {
       if (profileError) throw profileError;
 
       // Actualizăm contextul de autentificare
-      setUser({ ...data.user, role: 'client' });
-      setUserRole('client');
+      setUser(data.user);
+      setUserRole('client'); // sau 'worker' pentru RegisterWorker
 
       nextStep(); // Trece la următorul pas după înregistrare cu succes
     } catch (error) {

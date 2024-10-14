@@ -1,7 +1,8 @@
 import "./globals.css";
+import React from 'react';
 import { AuthProvider } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import Navbar from '@/components/Navbar';
 
 export const metadata = {
   title: "Fix Acum",
@@ -17,7 +18,6 @@ export default function RootLayout({ children }) {
             <Navbar />
             <main className="flex-1 w-full transition-all duration-300 ease-in-out md:pl-[2rem] lg:pl-[4rem]">
               {children}
-              <SpeedInsights />
             </main>
           </div>
         </AuthProvider>
