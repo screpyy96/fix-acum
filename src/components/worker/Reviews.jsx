@@ -8,13 +8,16 @@ export default function Reviews({ workerId }) {
 
   useEffect(() => {
     fetchReviews();
-  }, []);
+  }, [workerId]); // Adaugă workerId ca dependență
 
   const fetchReviews = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('reviews')
-      .select('*, client:clients(*)')
+      .select(`
+        *,
+        client:profiles!reviews_client_id_fkey(id, name) // Specifică relația corectă
+      `)
       .eq('worker_id', workerId)
       .order('created_at', { ascending: false });
 

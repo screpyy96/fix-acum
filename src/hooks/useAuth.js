@@ -6,7 +6,7 @@ const context = useContext(AuthContext);
 if (context === undefined) {
 throw new Error('useAuth must be used within an AuthProvider');
 }
-const { user, loading, signIn, signOut } = context; // Eliminat updateUser
+const { user, loading, signIn, signOut, userTrade } = context; // Eliminat updateUser
 const isAuthenticated = !!user;
 const userRole = user?.role;
 return {
@@ -16,6 +16,7 @@ signIn,
 signOut,
 isAuthenticated,
 userRole,
+userTrade,
 isClient: userRole === 'client',
 isWorker: userRole === 'worker',
 };

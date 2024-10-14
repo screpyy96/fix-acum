@@ -15,6 +15,7 @@ export default function JobDetails({ params }) {
   const [job, setJob] = useState(null);
   const [hasApplied, setHasApplied] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const [reviews, setReviews] = useState([]); // State for reviews
 
   useEffect(() => {
     if (!loading) {
@@ -33,13 +34,15 @@ export default function JobDetails({ params }) {
         .from('jobs')
         .select(`
           *,
-          client:profiles!jobs_client_id_fkey(*)
+          client:profiles!jobs_client_id_fkey(*),
+          reviews(*)
         `)
         .eq('id', params.id)
         .single();
 
       if (error) throw error;
       setJob(data);
+      setReviews(data.reviews); // Setează recenziile
     } catch (error) {
       console.error('Error fetching job details:', error);
       toast.error('Failed to load job details');
@@ -67,20 +70,12 @@ export default function JobDetails({ params }) {
     if (hasApplied) return;
     setIsApplying(true);
     try {
-      // Verifică dacă utilizatorul a aplicat deja
       const { data: existingApplication, error: checkError } = await supabase
         .from('job_applications')
         .select('*')
         .eq('job_id', params.id)
         .eq('worker_id', user.id)
-        .single()
-        .then(response => {
-          if (response.error && response.error.code === 'PGRST116') {
-            // No result found, which is fine in this case
-            return { data: null, error: null };
-          }
-          return response;
-        });
+        .single();
 
       if (checkError && checkError.code !== 'PGRST116') {
         throw checkError;
@@ -92,7 +87,6 @@ export default function JobDetails({ params }) {
         return;
       }
 
-      // Aplicare la job
       const { data: applicationData, error: applicationError } = await supabase
         .from('job_applications')
         .insert([
@@ -103,7 +97,6 @@ export default function JobDetails({ params }) {
 
       if (applicationError) throw applicationError;
 
-      // Crearea notificării pentru client
       await createNotification(
         job.client_id,
         'new_application',
@@ -173,6 +166,9 @@ export default function JobDetails({ params }) {
           </div>
         </div>
       </div>
+
+     
+
       <ToastContainer />
     </div>
   );
