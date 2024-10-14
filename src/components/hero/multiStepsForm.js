@@ -7,59 +7,33 @@ import { useForm } from '@/context/FormProvider'
 import useAuth from '@/hooks/useAuth'
 import Step1JobDetails from './steps/jobDetails'
 import RegisterClient from './steps/registerClient'
-import { FaArrowLeft, FaCheck } from 'react-icons/fa'
+import { FaArrowLeft } from 'react-icons/fa'
 import { supabase } from '@/lib/supabase'
+import ReviewSubmit from './steps/reviewSubmit'
 
 const MultiStepsForm = ({ tradeType, jobType }) => {
   const { formData, step, nextStep, prevStep, convertDateValue } = useForm()
   const [error, setError] = useState('')
   const router = useRouter()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, setIsAuthenticated } = useAuth()
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // Previne reîncărcarea paginii
-    setLoading(true);
-    setError(null);
+  const handleRegisterSuccess = () => {
+    setIsAuthenticated(true)
+    nextStep()
+  }
+
+  const handleJobCreation = async () => {
+    setLoading(true)
+    setError(null)
 
     try {
-      // Verifică dacă utilizatorul este autentificat
-      if (!isAuthenticated) {
-        // Înregistrarea utilizatorului folosind Supabase
-        const { data: { user }, error: signUpError } = await supabase.auth.signUp({
-          email: formData.userDetails.email,
-          password: formData.userDetails.password,
-        });
-
-        if (signUpError) throw signUpError;
-
-        // Crearea profilului utilizatorului
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            name: formData.userDetails.name,
-            email: formData.userDetails.email,
-            role: 'client'
-          });
-
-        if (profileError) throw profileError;
-
-        // Deconectează utilizatorul imediat după înregistrare
-        await supabase.auth.signOut();
-      }
-
-      // Acum, autentifică utilizatorul înainte de a crea jobul
-      const { data: { user } } = await supabase.auth.signInWithPassword({
-        email: formData.userDetails.email,
-        password: formData.userDetails.password,
-      });
+      const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
-        throw new Error('Autentificare eșuată. Te rugăm să încerci din nou.');
+        throw new Error('User not authenticated')
       }
 
-      // Crearea job-ului
       const { error: jobError } = await supabase
         .from('jobs')
         .insert({
@@ -73,17 +47,16 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
           location: formData.jobDetails.location || null,
           startDate: convertDateValue(formData.jobDetails.startDate),
           endDate: convertDateValue(formData.jobDetails.endDate)
-        });
+        })
 
-      if (jobError) throw jobError;
+      if (jobError) throw jobError
 
-      // Succes - redirecționare către dashboard
-      router.push('/dashboard/client');
+      router.push('/dashboard/client')
     } catch (error) {
-      console.error('Error during registration or job creation:', error);
-      setError(error.message);
+      console.error('Error creating job:', error)
+      setError(error.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -93,22 +66,9 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
         return <Step1JobDetails />
       case 2:
         return isAuthenticated ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <h2 className="text-2xl font-bold mb-4">Confirmare Job</h2>
-            <p className="mb-4">Sunteți gata să creați acest job?</p>
-            <button 
-              onClick={handleSubmit} 
-              className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300 flex items-center justify-center"
-            >
-              <FaCheck className="mr-2" /> Creează Job
-            </button>
-          </motion.div>
+          <ReviewSubmit onSubmit={handleJobCreation} />
         ) : (
-          <RegisterClient />
+          <RegisterClient onRegisterSuccess={handleRegisterSuccess} />
         )
       default:
         return null

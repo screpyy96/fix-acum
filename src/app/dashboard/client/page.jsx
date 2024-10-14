@@ -186,9 +186,7 @@ export default function ClientDashboard() {
     }
   }
 
-  const handleJobUpdate = () => {
-    fetchClientData();
-  };
+
 
   const handleCompleteJob = async (jobId) => {
     try {
@@ -237,6 +235,22 @@ export default function ClientDashboard() {
     } catch (error) {
       console.error('Error submitting review:', error);
       toast.error('Failed to submit review: ' + error.message);
+    }
+  };
+
+  const approveJob = async (jobId) => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: 'active' }) // Schimbă statusul la 'active'
+        .eq('id', jobId);
+
+      if (error) throw error;
+
+      // Reîncarcă statisticile după aprobarea jobului
+      fetchStats();
+    } catch (error) {
+      console.error('Error approving job:', error);
     }
   };
 

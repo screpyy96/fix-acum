@@ -1,8 +1,6 @@
-// components/worker/JobsList.js
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import useAuth from '@/hooks/useAuth';
-
 import { useRouter } from 'next/navigation';
 
 export default function JobsList() {
@@ -16,20 +14,40 @@ export default function JobsList() {
       if (!user || !userTrade) return;
 
       setLoading(true);
+
       const { data, error } = await supabase
         .from('jobs')
-        .select('*')
-        .eq('status', 'open')
-        .eq('tradeType', userTrade);
+        .select(`
+          *,
+          job_applications (
+            worker_id
+          )
+        `);
 
       if (error) {
         console.error('Error fetching jobs:', error);
-      } else {
-        setJobs(data);
+        return;
       }
+
+      console.log(data, 'data');
+
+      // Filtrăm joburile la care utilizatorul NU a aplicat
+      const filteredJobs = data.filter(job => {
+        // Verificăm dacă există `job_applications`
+        if (!job.job_applications || job.job_applications.length === 0) {
+          return true; // Dacă nu există aplicații, jobul este disponibil
+        }
+
+        // Verificăm dacă utilizatorul a aplicat la job
+        const hasApplied = job.job_applications.some(application => application.worker_id === user.id);
+        return !hasApplied; // Returnăm true doar dacă utilizatorul NU a aplicat
+      });
+
+      setJobs(filteredJobs);
       setLoading(false);
     };
 
+    console.log(jobs, 'jobs');
     fetchJobs();
 
     // Set up polling to fetch jobs every 30 seconds
@@ -62,10 +80,9 @@ export default function JobsList() {
             >
               <h3 className="text-xl font-semibold">{job.title}</h3>
               <p className="text-gray-600">{job.description}</p>
-              <p className="text-sm text-gray-500">Price: ${job.price}</p>
-              {job.job_applications && job.job_applications.some(application => application.worker.id === worker.id) && (
-                <p className="text-sm text-red-500">You have already applied to this job.</p>
-              )}
+              <p className="text-sm text-gray-500">Price: ${job.budget}</p>
+              <p className="text-sm text-gray-500">Status: {job.status}</p>
+              
             </li>
           ))}
         </ul>

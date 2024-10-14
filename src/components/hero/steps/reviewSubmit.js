@@ -11,8 +11,8 @@ const ReviewSubmit = ({ onSubmit }) => {
       <p>Descriere: {formData.jobDetails.description || 'Fără descriere'}</p>
       <p>Tip de Meserie: {formData.jobDetails.tradeType}</p>
       <p>Tip de Job: {formData.jobDetails.jobType}</p>
-      <p>Nume Client: {formData.clientData.name}</p>
-      <p>Email Client: {formData.clientData.email}</p>
+      <p>Nume Client: {formData.userDetails.name}</p>
+      <p>Email Client: {formData.userDetails.email}</p>
       <div className="flex justify-between mt-4">
         <button onClick={prevStep} className="bg-gray-300 text-black px-4 py-2 rounded">
           Înapoi

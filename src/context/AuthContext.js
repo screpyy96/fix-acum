@@ -20,8 +20,8 @@ export function AuthProvider({ children }) {
       const parsedUser = JSON.parse(userCookie);
       setUser(parsedUser);
       setUserRole(parsedUser.role); // Asumăm că rolul este stocat în cookie
-      setUserTrade(parsedUser.trade); // Setează și trade din cookie
-      console.log(parsedUser.trade, 'userTrade din cookie');
+      setUserTrade(parsedUser?.trade); // Setează și trade din cookie
+     
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
     }
     setLoading(false);
   }
-
+ 
   async function handleAuthChange(event, session) {
     setLoading(true);
     if (event === 'SIGNED_IN') {
@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
         id: session.user.id, 
         email: session.user.email, 
         role: data?.role, 
-        trade: data?.trade
+        trade: data?.user_metadata?.trade
       }), { expires: 7 });
     } else if (event === 'SIGNED_OUT') {
       setUser(null);
@@ -99,7 +99,7 @@ export function AuthProvider({ children }) {
         id: user.id, 
         email, 
         role: options.data.role, 
-        trade: options.data.trade
+        trade: options.data?.user_metadata?.trade
       }), { expires: 7 });
     }
 
@@ -161,6 +161,8 @@ export function AuthProvider({ children }) {
     signUp,
     signOut,
     signIn,
+    setUser, // Adaugă setUser
+    setUserRole
   };
 
   return (

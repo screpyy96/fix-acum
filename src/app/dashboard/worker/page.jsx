@@ -22,9 +22,7 @@ export default function WorkerDashboard() {
     }
   }, [user, loading]);
 
-  if (loading || !user) {
-    return <div>Loading...</div>;
-  }
+
 
   const renderContent = () => {
     switch (activeTab) {

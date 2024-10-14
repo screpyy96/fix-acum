@@ -39,14 +39,7 @@ export default function JobList({ jobs, onEditJob, onDeleteJob, onAcceptWorker, 
                 <FaTrash />
               </button>
             </div>
-            {job.status === 'open' && job.job_applications && job.job_applications.length > 0 && (
-              <button
-                onClick={() => onAcceptWorker(job.id, job.job_applications[0].worker.id)}
-                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-              >
-                Accept Worker
-              </button>
-            )}
+            
             {job.status === 'in-progress' && (
               <button
                 onClick={() => handleCompleteJob(job)}

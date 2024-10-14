@@ -7,7 +7,6 @@ import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 
-
 import LogoutButton from './logoutBtn';
 
 import MessageNotifications from './notifications/messageNotifications'
@@ -18,20 +17,11 @@ const Navbar = () => {
   const [isHovered, setIsHovered] = useState(false);
   const router = useRouter();
 
-  const handleDashboardRedirect = (e) => {
-    e.preventDefault();
-    if (userRole === 'client') {
-      router.push('/dashboard/client');
-    } else if (userRole === 'worker') {
-      router.push('/dashboard/worker');
-    }
-    setIsOpen(false);
-  };
 
-console.log(userRole)
+
   const navItems = [
     { name: 'Joburi', href: '/', icon: Briefcase },
-    { name: 'Muncitori', href: '/workers', icon: Users },
+    { name: 'Muncitori', href: '/', icon: Users },
   ];
 
   const renderNavItems = (isMobile = false) => (
@@ -69,6 +59,15 @@ console.log(userRole)
         </div>
       );
     }
+    const handleDashboardRedirect = (e) => {
+      e.preventDefault();
+      if (userRole === 'client') {
+        router.push('/dashboard/client');
+      } else if (userRole === 'worker') {
+        router.push('/dashboard/worker');
+      }
+      setIsOpen(false);
+    };
 
     if (!user) {
       return (
@@ -110,8 +109,9 @@ console.log(userRole)
         </div>
       );
     }
+    console.log(userRole, 'userRole');
 
-    const authItems = user
+    const authItems = userRole
       ? [
           { name: 'Dashboard', icon: User, onClick: handleDashboardRedirect },
           { name: 'Setări', icon: Settings, onClick: (e) => { e.preventDefault(); router.push('/settings'); setIsOpen(false); } },

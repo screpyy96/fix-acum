@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useForm } from '@/context/FormProvider';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/context/AuthContext'; // Asigură-te că importi contextul de autentificare
+import  useAuth  from '@/hooks/useAuth'; // Asigură-te că importi contextul de autentificare
 
-const RegisterClient = () => {
+const RegisterClient = ({ onRegisterSuccess }) => {
   const { formData, handleInputChange, nextStep } = useForm();
   const { setUser, setUserRole } = useAuth(); // Adăugăm setUser și setUserRole din contextul de autentificare
   const [error, setError] = useState('');
@@ -48,10 +48,10 @@ const RegisterClient = () => {
       if (profileError) throw profileError;
 
       // Actualizăm contextul de autentificare
-      setUser(data.user);
-      setUserRole('client'); // sau 'worker' pentru RegisterWorker
+      setUser({ ...data.user, role: 'client' });
+      setUserRole('client');
 
-      nextStep(); // Trece la următorul pas după înregistrare cu succes
+      onRegisterSuccess(); // Apelează această funcție după înregistrarea cu succes
     } catch (error) {
       console.error('Error during registration:', error);
       setError(error.message);

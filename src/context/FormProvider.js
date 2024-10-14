@@ -17,12 +17,12 @@ export const FormProvider = ({ children, initialTradeType, initialJobType }) => 
       jobType: initialJobType || '',
       title: '',
       description: '',
-      startDate: '', // Modificat din startTime
-      endDate: '',   // Modificat din end_date
+      startDate: '',
+      endDate: '',
       projectStage: '',
       isAuthorized: '',
     },
-    userDetails: {  // Adăugăm această secțiune
+    userDetails: {
       name: '',
       email: '',
       password: '',
@@ -121,7 +121,8 @@ export const FormProvider = ({ children, initialTradeType, initialJobType }) => 
       nextStep, 
       prevStep,
       submitFormData,
-      convertDateValue
+      convertDateValue,
+      setStep
     }}>
       {children}
     </FormContext.Provider>
