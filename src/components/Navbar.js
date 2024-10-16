@@ -1,30 +1,28 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/context/AuthContext';
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@/context/AuthContext'
 
-import LogoutButton from './logoutBtn';
+export default function Navbar() {
+  const { user, loading, signOut } = useAuth()
+  const [isOpen, setIsOpen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const router = useRouter()
 
-import MessageNotifications from './notifications/messageNotifications'
+  useEffect(() => {
+    console.log('Auth state:', { user, loading });
+  }, [user, loading]);
 
-const Navbar = () => {
-  const { user, loading, userRole } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const router = useRouter();
-
-
-
-  const navItems = [
+  const navItems = useMemo(() => [
     { name: 'Joburi', href: '/', icon: Briefcase },
     { name: 'Muncitori', href: '/', icon: Users },
-  ];
+  ], [])
 
-  const renderNavItems = (isMobile = false) => (
+  const renderNavItems = useCallback((isMobile = false) => (
     <div className={isMobile ? "mb-8" : "space-y-2"}>
       {navItems.map((item) => (
         <Link
@@ -38,179 +36,80 @@ const Navbar = () => {
           </div>
           <motion.span
             className="ml-4 whitespace-nowrap"
-            initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
+            initial={false}
             animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.1 }}
           >
             {item.name}
           </motion.span>
         </Link>
       ))}
     </div>
+  ), [navItems, isHovered])
+
+  const authItems = useMemo(() => 
+    user?.role && ['client', 'worker'].includes(user.role)
+      ? [
+          { 
+            name: 'Dashboard', 
+            icon: User, 
+            onClick: () => {
+              const dashboardRoute = user.role === 'client' ? '/dashboard/client' : '/dashboard/worker';
+              router.push(dashboardRoute);
+            }
+          },
+          { name: 'Setări', icon: Settings, onClick: () => router.push('/settings') },
+          { name: 'Notificări', icon: Bell, onClick: () => router.push('/notifications') },
+          { name: 'Mesaje', icon: Bell, href: '/messages' },
+          { name: 'Logout', icon: LogOut, onClick: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              console.error('Error signing out:', error);
+              // Optionally, add user-facing error handling here
+            }
+          }},
+        ]
+      : [],
+    [user?.role, router, signOut]
   );
 
-  const renderAuthItems = (isMobile = false) => {
+  const renderAuthItems = useCallback((isMobile = false) => {
     if (loading) {
       return (
         <div className="flex flex-col space-y-4">
-          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
-          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
-          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
-          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
-          <div className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
+          ))}
         </div>
-      );
+      )
     }
-    const handleDashboardRedirect = (e) => {
-      e.preventDefault();
-      if (userRole === 'client') {
-        router.push('/dashboard/client');
-      } else if (userRole === 'worker') {
-        router.push('/dashboard/worker');
-      }
-      setIsOpen(false);
-    };
 
-    if (!user) {
+    if (!user.id || (user && !user.role)) {
       return (
         <div className={`flex flex-col ${isMobile ? "space-y-4" : "space-y-2"}`}>
-          <Link
-            href="/login"
-            className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
-            onClick={() => setIsOpen(false)}
-          >
-            <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
-              <User className="h-6 w-6" />
-            </div>
-            <motion.span
-              className="ml-4 whitespace-nowrap"
-              initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
-              animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              Log In
-            </motion.span>
-          </Link>
-          <Link
-            href="/register/worker"
-            className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
-            onClick={() => setIsOpen(false)}
-          >
-            <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
-              <Users className="h-6 w-6" />
-            </div>
-            <motion.span
-              className="ml-4 whitespace-nowrap"
-              initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
-              animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              Sign Up
-            </motion.span>
-          </Link>
+          <AuthLink href="/login" icon={User} text="Log In" isMobile={isMobile} isHovered={isHovered} onClick={() => setIsOpen(false)} />
+          <AuthLink href="/register/worker" icon={Users} text="Sign Up" isMobile={isMobile} isHovered={isHovered} onClick={() => setIsOpen(false)} />
         </div>
-      );
+      )
     }
-    console.log(userRole, 'userRole');
-
-    const authItems = userRole
-      ? [
-          { name: 'Dashboard', icon: User, onClick: handleDashboardRedirect },
-          { name: 'Setări', icon: Settings, onClick: (e) => { e.preventDefault(); router.push('/settings'); setIsOpen(false); } },
-          { name: 'Notificări', icon: Bell, onClick: (e) => { e.preventDefault(); router.push('/notifications'); setIsOpen(false); } },
-          { name: 'Mesaje', component: <MessageNotifications />, href: '/messages' },
-          { name: 'Logout', component: <LogoutButton /> }, // Înlocuiți această linie
-        ]
-      : [];
 
     return (
       <div className={`flex flex-col ${isMobile ? "space-y-4" : "space-y-2"}`}>
         {authItems.map((item, index) => (
-          <div 
-            key={index} 
-            className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
-          >
-            {item.component ? (
-              item.name === 'Logout' ? (
-                <div className="flex items-center w-full py-2">
-                  <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
-                    <LogOut className="h-6 w-6" />
-                  </div>
-                  <motion.span
-                    className="ml-4 whitespace-nowrap"
-                    initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
-                    animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {item.component}
-                  </motion.span>
-                </div>
-              ) : (
-                <Link
-                  href={item.href || "/notifications"}
-                  className="flex items-center w-full py-2 cursor-pointer text-white hover:text-yellow-300 transition-colors duration-200"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
-                    {item.component}
-                  </div>
-                  <motion.span
-                    className="ml-4 whitespace-nowrap text-sm"
-                    initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
-                    animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {item.name}
-                  </motion.span>
-                </Link>
-              )
-            ) : item.onClick ? (
-              <button 
-                className="flex items-center w-full py-1 cursor-pointer" 
-                onClick={item.onClick}
-              >
-                <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
-                  <item.icon className="h-6 w-6" />
-                </div>
-                <motion.span
-                  className="ml-4 whitespace-nowrap"
-                  initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
-                  animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {item.name}
-                </motion.span>
-              </button>
-            ) : (
-              <Link
-                href={item.href}
-                className="flex items-center w-full py-2"
-                onClick={() => setIsOpen(false)}
-              >
-                <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
-                  <item.icon className="h-6 w-6" />
-                </div>
-                <motion.span
-                  className="ml-4 whitespace-nowrap"
-                  initial={isMobile ? { opacity: 1, width: 'auto' } : { opacity: 0, width: 0 }}
-                  animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {item.name}
-                </motion.span>
-              </Link>
-            )}
-          </div>
+          <AuthItem key={index} item={item} isMobile={isMobile} isHovered={isHovered} onClick={() => setIsOpen(false)} />
         ))}
       </div>
-    );
-  };
+    )
+  }, [loading, user, authItems, isHovered, setIsOpen])
+
+
 
   return (
     <>
       <motion.nav 
         className="fixed left-0 top-0 h-full bg-gradient-to-b from-purple-600 via-pink-500 to-red-500 z-40 overflow-hidden navbar hidden md:block group"
-        initial={{ width: '5rem' }}
+        initial={false}
         animate={{ width: isHovered ? '16rem' : '4.3rem' }}
         transition={{ duration: 0.3 }}
         onHoverStart={() => setIsHovered(true)}
@@ -224,7 +123,7 @@ const Navbar = () => {
               </div>
               <motion.span
                 className="ml-12 whitespace-nowrap"
-                initial={{ opacity: 0, width: 0 }}
+                initial={false}
                 animate={{ opacity: isHovered ? 1 : 0, width: isHovered ? 'auto' : 0 }}
                 transition={{ duration: 0.2 }}
               >
@@ -241,17 +140,16 @@ const Navbar = () => {
         </div>
       </motion.nav>
 
-      {/* Mobile menu button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         className="md:hidden fixed top-4 right-4 z-50 p-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full shadow-lg"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
+        aria-label={isOpen ? "Close menu" : "Open menu"}
       >
         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </motion.button>
 
-      {/* Mobile menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -276,7 +174,65 @@ const Navbar = () => {
         )}
       </AnimatePresence>
     </>
-  );
-};
+  )
+}
 
-export default Navbar;
+const AuthLink = React.memo(({ href, icon: Icon, text, isMobile, isHovered, onClick }) => (
+  <Link
+    href={href}
+    className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
+    onClick={onClick}
+  >
+    <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+      <Icon className="h-6 w-6" />
+    </div>
+    <motion.span
+      className="ml-4 whitespace-nowrap"
+      initial={false}
+      animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      {text}
+    </motion.span>
+  </Link>
+))
+
+const AuthItem = React.memo(({ item, isMobile, isHovered, onClick }) => (
+  <div className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200">
+    {item.onClick ? (
+      <button 
+        className="flex items-center w-full py-1 cursor-pointer" 
+        onClick={() => {
+          item.onClick()
+          onClick()
+        }}
+      >
+        <AuthItemContent item={item} isMobile={isMobile} isHovered={isHovered} />
+      </button>
+    ) : (
+      <Link
+        href={item.href}
+        className="flex items-center w-full py-2"
+        onClick={onClick}
+      >
+        <AuthItemContent item={item} isMobile={isMobile} isHovered={isHovered} />
+      </Link>
+    )}
+  </div>
+))
+
+const AuthItemContent = React.memo(({ item, isMobile, isHovered }) => (
+  <>
+    <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
+      <item.icon className="h-6 w-6" />
+    </div>
+    <motion.span
+      className="ml-4 whitespace-nowrap"
+      initial={false}
+      animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      {item.name}
+    </motion.span>
+  </>
+))

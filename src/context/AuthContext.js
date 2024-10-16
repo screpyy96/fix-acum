@@ -1,142 +1,119 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
 
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [userTrade, setUserTrade] = useState(null);
-  const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    // Verifică cookie-ul la inițializare
-    const userCookie = Cookies.get('user');
-    if (userCookie) {
-      const parsedUser = JSON.parse(userCookie);
-      setUser(parsedUser);
-      setUserRole(parsedUser.role); // Asumăm că rolul este stocat în cookie
-      setUserTrade(parsedUser?.trade); // Setează și trade din cookie
-     
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
-    checkUser();
-    return () => subscription.unsubscribe();
-  }, []);
-
-  async function checkUser() {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-  
-    setUser(user);
-    if (user) {
-      const { data } = await supabase
+  const fetchUserProfile = useCallback(async (userId) => {
+    try {
+      const { data, error } = await supabase
         .from('profiles')
         .select('role, trade')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
       
-      setUserRole(data?.role);
-      setUserTrade(data?.trade);
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  }, []);
+
+  const updateUserState = useCallback(async (authUser) => {
+    if (authUser) {
+      const profileData = await fetchUserProfile(authUser.id);
+      const updatedUser = { ...authUser, role: profileData?.role, trade: profileData?.trade };
+      setUser(updatedUser);
+      console.log('User state updated:', updatedUser);
+    } else {
+      setUser(null);
+      console.log('User state cleared');
     }
     setLoading(false);
-  }
- 
-  async function handleAuthChange(event, session) {
-    setLoading(true);
-    if (event === 'SIGNED_IN') {
-      setUser(session.user);
-      const { data } = await supabase.from('profiles').select('role, trade').eq('id', session.user.id).single();
-      setUserRole(data?.role);
-      setUserTrade(data?.trade);
+  }, [fetchUserProfile]);
 
-      // Setează cookie-ul la autentificare cu toate datele necesare
-      Cookies.set('user', JSON.stringify({
-        id: session.user.id, 
-        email: session.user.email, 
-        role: data?.user_metadata?.role, 
-        trade: data?.user_metadata?.trade
-      }), { expires: 7 });
+  const checkUser = useCallback(async () => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      await updateUserState(authUser);
+    } catch (error) {
+      console.error('Error in checkUser:', error);
+      setUser(null);
+      setLoading(false);
+    }
+  }, [updateUserState]);
+
+  const handleAuthChange = useCallback(async (event, session) => {
+    console.log('Auth state changed:', event);
+    if (event === 'SIGNED_IN' && session) {
+      await updateUserState(session.user);
     } else if (event === 'SIGNED_OUT') {
       setUser(null);
-      setUserRole(null);
-      setUserTrade(null);
-      Cookies.remove('user'); // Șterge cookie-ul la deconectare
+      console.log('User signed out');
       router.push('/');
     }
     setLoading(false);
-  }
+  }, [updateUserState, router]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+    checkUser();
+    return () => subscription.unsubscribe();
+  }, [checkUser, handleAuthChange]);
 
   const signUp = async ({ email, password, options }) => {
-    const { data, error } = await supabase.auth.signUp({ email, password, options });
-    if (error) throw error;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password, options });
+      if (error) throw error;
 
-    const { user } = data;
-    if (user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: user.id,
-            name: options.data.name,
-            role: options.data.role,
-            trade: options.data.trade,
-          }
-        ]);
+      const { user } = data;
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: user.id,
+              name: options.data.name,
+              role: options.data.role,
+              trade: options.data.trade,
+            }
+          ]);
 
-      if (profileError) {
-        console.error('Error saving profile:', profileError);
-        throw profileError;
+        if (profileError) {
+          console.error('Error saving profile:', profileError);
+          throw profileError;
+        }
+
+        await updateUserState(user);
       }
 
-      // Setează cookie-ul după înregistrare
-      Cookies.set('user', JSON.stringify({
-        id: user.id, 
-        email, 
-        role: options.data.role, 
-        trade: options.data?.user_metadata?.trade
-      }), { expires: 7 });
+      return { user };
+    } catch (error) {
+      console.error('Error in signUp:', error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
-
-    setUser(user);
-    setUserTrade(options.data.trade); // Setează trade-ul după înregistrare
-    await fetchUserRole(user.id);
-    return { user };
   };
 
   const signIn = async ({ email, password }) => {
     setLoading(true);
-    console.log('Încercare de autentificare pentru:', email);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      setUser(data.user);
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('role, trade')
-        .eq('id', data.user.id)
-        .single();
-      
-      setUserRole(profileData?.role);
-      setUserTrade(profileData?.trade); // Setează și `trade`
-
-      // Setează cookie-ul la autentificare cu toate datele necesare
-      Cookies.set('user', JSON.stringify({
-        id: data.user.id, 
-        email, 
-        role: profileData?.role, 
-        trade: profileData?.trade
-      }), { expires: 7 });
-
+      await updateUserState(data.user);
       return data;
     } catch (error) {
-      console.error('Eroare la autentificare:', error);
+      console.error('Error in signIn:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -144,26 +121,28 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    console.log('User signed out, checking session...');
-    setUser(null);
-    setUserRole(null);
-    setUserTrade(null);
-    Cookies.remove('user'); // Șterge cookie-ul la deconectare
-    router.push('/');
+    setLoading(true);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      router.push('/');
+    } catch (error) {
+      console.error('Error in signOut:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const value = {
     user,
-    userRole,
-    userTrade,
     loading,
     signUp,
     signOut,
     signIn,
-    setUser, // Adaugă setUser
-    setUserRole
+    setUser
   };
+
+  console.log('Current auth context value:', value);
 
   return (
     <AuthContext.Provider value={value}>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import useAuth from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare, User, Briefcase, ChevronRight, Search } from 'lucide-react';
+import { MessageSquare, User, Briefcase, Search } from 'lucide-react';
 
 export default function ConversationsPage() {
   const { user } = useAuth();
@@ -17,10 +17,7 @@ export default function ConversationsPage() {
   const [unreadCounts, setUnreadCounts] = useState({});
 
   useEffect(() => {
-    if (!user) {
-      router.push('/');
-      return; // Exit early if no user
-    }
+    
 
     const fetchConversations = async () => {
       setIsLoading(true);
