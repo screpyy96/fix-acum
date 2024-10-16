@@ -85,7 +85,7 @@ export default function Navbar() {
       )
     }
 
-    if (!user.id || (user && !user.role)) {
+    if (!user || (user && !user.role)) {
       return (
         <div className={`flex flex-col ${isMobile ? "space-y-4" : "space-y-2"}`}>
           <AuthLink href="/login" icon={User} text="Log In" isMobile={isMobile} isHovered={isHovered} onClick={() => setIsOpen(false)} />
