@@ -45,7 +45,7 @@ export default function JobDetails({ params }) {
       console.error('Error fetching job details:', error);
     }
   };
-
+console.log(user);
   const checkApplicationStatus = async () => {
     try {
       const { data: existingApplications, error } = await supabase

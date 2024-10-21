@@ -2,43 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth, loadUserFromLocalStorage } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function Settings() {
+  return (
+    <ProtectedRoute>
+      <SettingsContent />
+    </ProtectedRoute>
+  );
+}
+
+function SettingsContent() {
   const { user, loading, setUser } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [trade, setTrade] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    const initializeUser = async () => {
-      let currentUser = user;
-      if (!currentUser) {
-        currentUser = loadUserFromLocalStorage();
-        if (currentUser) {
-          setUser(currentUser);
-        }
-      }
-
-      if (currentUser && (currentUser.role === 'worker' || currentUser.role === 'client')) {
-        setName(currentUser.user_metadata?.name || '');
-        setEmail(currentUser.email || '');
-        setTrade(currentUser.trade || '');
-        setIsLoading(false);
-      } else {
-        console.log('No user found, redirecting to login');
-        router.push('/login');
-      }
-    };
-
-    initializeUser();
-  }, []);
+    if (user && user.user_metadata) {
+      setName(user.user_metadata.name || '');
+      setEmail(user.email || '');
+      setTrade(user.user_metadata.trade || '');
+      console.log('User data initialized:', { name, email, trade });
+    }
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,14 +38,21 @@ export default function Settings() {
 
     try {
       const currentUser = user || loadUserFromLocalStorage();
+      console.log('Updating profile for user:', currentUser);
+      
       if (!currentUser) {
         throw new Error('User not found');
+      }
+
+      const userRole = currentUser.user_metadata?.role;
+      if (!userRole || !['client', 'worker'].includes(userRole)) {
+        throw new Error('Invalid user role');
       }
 
       // Actualizare date în tabela 'profiles'
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ name, trade: currentUser.role === 'worker' ? trade : null })
+        .update({ name, trade: userRole === 'worker' ? trade : null })
         .eq('id', currentUser.id);
 
       if (profileError) throw profileError;
@@ -67,24 +65,33 @@ export default function Settings() {
 
       // Actualizare metadata utilizator
       const { data, error: metadataError } = await supabase.auth.updateUser({
-        data: { name, trade: currentUser.role === 'worker' ? trade : null }
+        data: { name, trade: userRole === 'worker' ? trade : null }
       });
 
       if (metadataError) throw metadataError;
 
       // Actualizare stare utilizator în context și localStorage
-      const updatedUser = { ...currentUser, email, user_metadata: { ...currentUser.user_metadata, name }, trade };
+      const updatedUser = { 
+        ...currentUser, 
+        email, 
+        user_metadata: { 
+          ...currentUser.user_metadata, 
+          name, 
+          trade: userRole === 'worker' ? trade : null 
+        } 
+      };
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
 
       setSuccess('Profile updated successfully');
+      console.log('Profile updated successfully');
     } catch (err) {
       console.error('Error updating profile:', err);
       setError('Failed to update profile: ' + err.message);
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return <LoadingSpinner />;
   }
 
@@ -114,7 +121,7 @@ export default function Settings() {
             className="w-full p-2 border rounded"
           />
         </div>
-        {user && user.role === 'worker' && (
+        {user && user.user_metadata?.role === 'worker' && (
           <div>
             <label htmlFor="trade" className="block mb-1">Trade</label>
             <input

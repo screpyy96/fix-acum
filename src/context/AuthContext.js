@@ -11,13 +11,20 @@ export function AuthProvider({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    const session = supabase.auth.getSession();
-    setUser(session?.user ?? null);
-    setLoading(false);
-
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const initializeSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('Error fetching session:', error);
+      }
       setUser(session?.user ?? null);
       setLoading(false);
+    };
+
+    initializeSession();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
+      await updateUserState(session?.user ?? null);
     });
 
     return () => {
@@ -44,28 +51,47 @@ export function AuthProvider({ children }) {
   const updateUserState = useCallback(async (authUser) => {
     if (authUser) {
       const profileData = await fetchUserProfile(authUser.id);
-      const updatedUser = { ...authUser, role: profileData?.role, trade: profileData?.trade };
-      setUser(updatedUser);
-      saveUserToLocalStorage(updatedUser);
-      console.log('User state updated:', updatedUser);
+      if (profileData) {
+        const updatedUser = { 
+          ...authUser, 
+          user_metadata: { 
+            ...authUser.user_metadata, 
+            role: profileData.role, 
+            trade: profileData.trade 
+          } 
+        };
+        setUser(updatedUser);
+        saveUserToLocalStorage(updatedUser);
+        console.log('User state updated:', updatedUser);
+      } else {
+        // Dacă nu se obține profileData, curăță utilizatorul
+        setUser(null);
+        localStorage.removeItem('user');
+        console.log('Profile data missing, user state cleared');
+        // Eliminare redirect din context
+      }
     } else {
       setUser(null);
       localStorage.removeItem('user');
       console.log('User state cleared');
+      // Eliminare redirect din context
     }
     setLoading(false);
   }, [fetchUserProfile]);
 
   const checkUser = useCallback(async () => {
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+      if (error) throw error;
       console.log('Auth user from checkUser:', authUser); // Log pentru debugging
       await updateUserState(authUser);
     } catch (error) {
       console.error('Error in checkUser:', error);
       setUser(null);
+      localStorage.removeItem('user');
+      // Eliminare redirect din context
     } finally {
-      setLoading(false); // Asigură-te că loading este setat la false aici
+      setLoading(false);
     }
   }, [updateUserState]);
 
@@ -76,10 +102,11 @@ export function AuthProvider({ children }) {
       await updateUserState(session.user);
     } else if (event === 'SIGNED_OUT') {
       setUser(null);
+      localStorage.removeItem('user');
       console.log('User signed out');
-      router.push('/'); // Redirecționează utilizatorul la homepage
+      router.push('/'); // Este acceptabil să redirecționezi la homepage la sign-out
     }
-    setLoading(false); // Asigură-te că loading este setat la false aici
+    setLoading(false);
   }, [updateUserState, router]);
 
   const signUp = async ({ email, password, options }) => {
@@ -126,9 +153,21 @@ export function AuthProvider({ children }) {
 
       console.log('User data after sign in:', data.user);
       const profileData = await fetchUserProfile(data.user.id);
-      const updatedUser = { ...data.user, role: profileData?.role, trade: profileData?.trade };
-      setUser(updatedUser);
-      saveUserToLocalStorage(updatedUser);
+      if (profileData) {
+        const updatedUser = { 
+          ...data.user, 
+          user_metadata: { 
+            ...data.user.user_metadata, 
+            role: profileData.role, 
+            trade: profileData.trade 
+          } 
+        };
+        setUser(updatedUser);
+        saveUserToLocalStorage(updatedUser);
+        console.log('User signed in and profile updated:', updatedUser);
+      } else {
+        throw new Error('Profile data missing after sign in');
+      }
       return data;
     } catch (error) {
       console.error('Error in signIn:', error);
@@ -144,6 +183,7 @@ export function AuthProvider({ children }) {
       await supabase.auth.signOut();
       setUser(null);
       localStorage.removeItem('user');
+      console.log('User signed out successfully');
       router.push('/');
     } catch (error) {
       console.error('Error in signOut:', error);

@@ -1,20 +1,29 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import useAuth from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext'; // Asigură-te că importul este corect
 import { useRouter } from 'next/navigation';
 
-export default function JobsList() {
+export default function JobList() { // Corectat numele funcției
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user, userTrade } = useAuth(); // Asigură-te că userTrade este extras corect
+  const { user } = useAuth(); // Folosește contextul de autentificare corect
   const router = useRouter();
+
+  // Extrage trade din user_metadata
+  const userTrade = user?.user_metadata?.trade;
 
   useEffect(() => {
     const fetchJobs = async () => {
-      if (!user || !userTrade) return;
+      // Asigură-te că user și userTrade există
+      if (!user || !userTrade) {
+        setLoading(false);
+        setJobs([]);
+        return;
+      }
 
       setLoading(true);
 
+      // Interogare Supabase filtrată pe trade-ul userului
       const { data, error } = await supabase
         .from('jobs')
         .select(`
@@ -22,14 +31,16 @@ export default function JobsList() {
           job_applications (
             worker_id
           )
-        `);
+        `)
+        .eq('tradeType', userTrade); // Filtrează joburile pe baza trade-ului
 
       if (error) {
         console.error('Error fetching jobs:', error);
+        setLoading(false);
         return;
       }
 
-      console.log(data, 'data');
+      console.log('Fetched jobs:', data);
 
       // Filtrăm joburile la care utilizatorul NU a aplicat
       const filteredJobs = data.filter(job => {
@@ -47,7 +58,6 @@ export default function JobsList() {
       setLoading(false);
     };
 
-    console.log(jobs, 'jobs');
     fetchJobs();
 
     // Set up polling to fetch jobs every 30 seconds
@@ -55,7 +65,7 @@ export default function JobsList() {
 
     // Clean up the interval on component unmount
     return () => clearInterval(interval);
-  }, [user, userTrade]);
+  }, [user, userTrade]); // Adaugă userTrade în dependențe
 
   const handleJobClick = (jobId) => {
     router.push(`/dashboard/job-details/${jobId}`);
@@ -82,7 +92,6 @@ export default function JobsList() {
               <p className="text-gray-600">{job.description}</p>
               <p className="text-sm text-gray-500">Price: ${job.budget}</p>
               <p className="text-sm text-gray-500">Status: {job.status}</p>
-              
             </li>
           ))}
         </ul>

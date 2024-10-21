@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Importă useRouter
 import { useAuth } from '@/context/AuthContext';
+import Loading from '@/components/LoadingSpinner'; // Importă componentul de încărcare
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -34,7 +35,7 @@ export default function Login() {
   }, [user, loading, router]); // Adaugă user, loading și router ca dependențe
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <Loading />; // Utilizează componentul de încărcare
   }
 
   return (

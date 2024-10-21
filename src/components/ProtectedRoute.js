@@ -3,26 +3,23 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const ProtectedRoute = ({ children }) => {
-  const { user, userRole, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user || !userRole) {
-        console.log('User not authenticated or role is null, redirecting to login');
-        router.push('/login');
-      }
+    if (!loading && !user) {
+      router.push('/login');
     }
-  }, [user, userRole, loading, router]);
+  }, [user, loading, router]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
-  return children;
+  return user ? children : null;
 };
 
 export default ProtectedRoute;
-
