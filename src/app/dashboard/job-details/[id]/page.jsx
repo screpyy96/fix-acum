@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { FaTools, FaMoneyBillWave, FaMapMarkerAlt, FaClock, FaUser } from 'react-icons/fa';
 import { createNotification } from '@/lib/notifications';
 
@@ -45,7 +43,6 @@ export default function JobDetails({ params }) {
 
     } catch (error) {
       console.error('Error fetching job details:', error);
-      toast.error('Failed to load job details');
     }
   };
 
@@ -82,7 +79,7 @@ export default function JobDetails({ params }) {
       }
 
       if (existingApplication) {
-        toast.info('You have already applied to this job');
+        console.log('You have already applied to this job');
         setHasApplied(true);
         return;
       }
@@ -104,10 +101,9 @@ export default function JobDetails({ params }) {
       );
 
       setHasApplied(true);
-      toast.success('Application submitted successfully!');
+      console.log('Application submitted successfully!');
     } catch (error) {
       console.error('Error applying for job:', error);
-      toast.error('Failed to submit application: ' + error.message);
     } finally {
       setIsApplying(false);
     }
@@ -166,10 +162,6 @@ export default function JobDetails({ params }) {
           </div>
         </div>
       </div>
-
-     
-
-      <ToastContainer />
     </div>
   );
 }
