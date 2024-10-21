@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://fix-acum.ro
+
+# Sitemaps
+Sitemap: https://fix-acum.ro/sitemap.xml

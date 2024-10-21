@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postbuild": "next-sitemap"
+    "postbuild": "next-sitemap",
+    "generate-sitemap": "next build && next-sitemap"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -16,13 +17,13 @@
     "@tailwindcss/forms": "^0.5.9",
     "@vercel/analytics": "^1.3.1",
     "date-fns": "^4.1.0",
+    "dotenv": "^16.4.5",
     "framer-motion": "^11.11.7",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.451.0",
     "next": "14.2.13",
     "next-auth": "^4.24.8",
-    "next-sitemap": "^4.2.3",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.53.0",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@types/phoenix": "^1.6.5",
     "@vercel/speed-insights": "^1.0.12",
+    "next-sitemap": "^4.2.3",
     "postcss": "^8",
     "tailwindcss": "^3.4.1"
   }
