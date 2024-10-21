@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/context/AuthContext'  // Importăm hook-ul useAuth
 import JobList from '@/components/jobList/jobList'
 import EditJobModal from '@/components/jobModal/jobModal'
 import { FaChartBar, FaUser, FaCheckCircle } from 'react-icons/fa'
@@ -15,18 +16,20 @@ export default function ClientDashboard() {
   const [error, setError] = useState(null)
   const [editingJob, setEditingJob] = useState(null)
   const [stats, setStats] = useState({ totalJobs: 0, activeJobs: 0, completedJobs: 0 })
-  const router = useRouter()
   const [message, setMessage] = useState('');
+  const router = useRouter()
+  const { user, loading } = useAuth()  // Utilizăm hook-ul useAuth
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'))
-    if (!user || user.role !== 'client') {
-      console.log('User is not a client, redirecting to dashboard')
-      router.push('/dashboard')
-    } else {
-      fetchClientData(user.id)
+    if (!loading) {
+      if (!user || user.user_metadata.role !== 'client') {
+        console.log('User is not a client, redirecting to dashboard')
+        router.push('/')
+      } else {
+        fetchClientData(user?.id)
+      }
     }
-  }, [router])
+  }, [user, loading, router])
 
   const fetchClientData = async (clientId) => {
     setIsLoading(true)
@@ -253,17 +256,16 @@ export default function ClientDashboard() {
     }
   };
 
-  if (isLoading) return <LoadingSpinner />
+  if (loading || isLoading) return <LoadingSpinner />
   if (error) return <div>Error: {error}</div>
-
-  const user = JSON.parse(localStorage.getItem('user'))
+  if (!user) return <div>Please log in to access this page.</div>
 
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Welcome, {user?.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Welcome, {user.user_metadata.name || user.email}</h1>
             <p className="text-gray-600">Manage your projects and workers</p>
           </div>
         </div>

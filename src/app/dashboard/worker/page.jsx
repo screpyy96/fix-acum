@@ -1,7 +1,7 @@
 // pages/dashboard/worker.js
 'use client'
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 import useAuth from '@/hooks/useAuth';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import Overview from '@/components/worker/Overview';
@@ -14,7 +14,6 @@ import Settings from '@/components/worker/Settings';
 export default function WorkerDashboard() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('Overview');
-  const router = useRouter();
 
 
   if (loading) {

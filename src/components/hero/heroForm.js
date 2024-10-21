@@ -39,7 +39,7 @@ const HeroForm = () => {
     e.preventDefault()
     setIsSubmitting(true)
     if (!formData.tradeType || !formData.jobType) {
-      setError('Vă rugăm să completați ambele câmpuri.')
+      setError('Vă rugăm să completați toate câmpurile.')
       setIsSubmitting(false)
       return
     }
@@ -59,10 +59,10 @@ const HeroForm = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full max-w-4xl mx-auto"
+      className="w-full max-w-3xl mx-auto"
     >
       <form onSubmit={handleSubmit} className="flex flex-col md:flex-row items-center gap-4">
-        <div className="w-full md:w-2/5 relative">
+        <div className="w-full md:w-1/3 relative">
           <select
             name="tradeType"
             value={formData.tradeType}
@@ -77,7 +77,7 @@ const HeroForm = () => {
           </select>
           <FaTools className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
-        <div className="w-full md:w-2/5 relative">
+        <div className="w-full md:w-1/3 relative">
           <select
             name="jobType"
             value={formData.jobType}
@@ -94,7 +94,7 @@ const HeroForm = () => {
         </div>
         <motion.button 
           type="submit"
-          className="w-full md:w-1/5 bg-blue-600 text-white p-4 rounded-lg font-bold hover:bg-blue-700 transition duration-300 flex items-center justify-center"
+          className="w-full md:w-1/3 bg-blue-600 text-white p-4 rounded-lg font-bold hover:bg-blue-700 transition duration-300 flex items-center justify-center"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={isSubmitting}

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Importă useRouter
 import { useAuth } from '@/context/AuthContext';
-import Loading from '@/components/LoadingSpinner'; // Importă componentul de încărcare
+; // Importă componentul de încărcare
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -23,19 +24,19 @@ export default function Login() {
     }
   };
 
+
   useEffect(() => {
     if (!loading && user) {
       // Redirecționează utilizatorul în funcție de rol
-      if (user.role === 'client') {
+      if (user?.user_metadata?.role === 'client') {
         router.push('/dashboard/client');
-      } else if (user.role === 'worker') {
+      } else if (user?.user_metadata?.role === 'worker') {
         router.push('/dashboard/worker');
       }
     }
-  }, [user, loading, router]); // Adaugă user, loading și router ca dependențe
-
+  }, [ loading, router, user]); // Adaugă user, loading și router ca dependențe
   if (loading) {
-    return <Loading />; // Utilizează componentul de încărcare
+    return <LoadingSpinner />; // Utilizează componentul de încărcare
   }
 
   return (

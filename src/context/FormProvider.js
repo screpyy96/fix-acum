@@ -22,6 +22,7 @@ export const FormProvider = ({ children, initialTradeType, initialJobType }) => 
       projectStage: '',
       isAuthorized: '',
     },
+    location: {}, // Adăugat secțiunea de locație
     userDetails: {
       name: '',
       email: '',
@@ -100,7 +101,7 @@ export const FormProvider = ({ children, initialTradeType, initialJobType }) => 
           {
             ...convertedJobData,
             client_id: formData.clientId,
-            // Adăugați alte câmpuri necesare aici
+            location: formData.location, // Adăugat locația
           }
         ]);
 

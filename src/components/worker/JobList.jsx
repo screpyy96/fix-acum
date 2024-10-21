@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext'; // Asigură-te că importul este corect
 import { useRouter } from 'next/navigation';
+import Head from 'next/head';
 
 export default function JobList() { // Corectat numele funcției
   const [jobs, setJobs] = useState([]);
@@ -75,27 +76,62 @@ export default function JobList() { // Corectat numele funcției
     return <div>Loading available jobs...</div>;
   }
 
+  const schema = jobs.map(job => ({
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    "title": job.title,
+    "description": job.description,
+    "identifier": {
+      "@type": "PropertyValue",
+      "name": "Fix Acum",
+      "value": job.id
+    },
+    "datePosted": new Date(job.created_at).toISOString(),
+    "employmentType": "FULL_TIME",
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": "Fix Acum",
+      "sameAs": "https://www.fix-acum.ro"
+    },
+    "jobLocation": {
+      "@type": "Place",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": job.location, // Asigură-te că ai câmpul 'location'
+        "addressCountry": "RO"
+      }
+    }
+  }));
+
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Lucrări pentru {userTrade}</h2>
-      {jobs.length === 0 ? (
-        <p>No available jobs found for your trade type.</p>
-      ) : (
-        <ul className="space-y-4">
-          {jobs.map((job) => (
-            <li 
-              key={job.id} 
-              className="border-b pb-4 cursor-pointer hover:bg-gray-100 transition-colors p-4 rounded"
-              onClick={() => handleJobClick(job.id)}
-            >
-              <h3 className="text-xl font-semibold">{job.title}</h3>
-              <p className="text-gray-600">{job.description}</p>
-              <p className="text-sm text-gray-500">Price: ${job.budget}</p>
-              <p className="text-sm text-gray-500">Status: {job.status}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <>
+      <Head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      </Head>
+      <div className="p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold mb-4">Lucrări pentru {userTrade}</h2>
+        {jobs.length === 0 ? (
+          <p>No available jobs found for your trade type.</p>
+        ) : (
+          <ul className="space-y-4">
+            {jobs.map((job) => (
+              <li 
+                key={job.id} 
+                className="border-b pb-4 cursor-pointer hover:bg-gray-100 transition-colors p-4 rounded"
+                onClick={() => handleJobClick(job.id)}
+              >
+                <h3 className="text-xl font-semibold">{job.title}</h3>
+                <p className="text-gray-600">{job.description}</p>
+                <p className="text-sm text-gray-500">Price: ${job.budget}</p>
+                <p className="text-sm text-gray-500">Status: {job.status}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
   );
 }

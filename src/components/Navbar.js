@@ -20,8 +20,10 @@ export default function Navbar() {
 
   const authItems = useMemo(() => {
     if (!user || !user.user_metadata || !['client', 'worker'].includes(user.user_metadata.role)) {
-      return []
+      return null
     }
+
+
 
     return [
       { 
@@ -75,12 +77,12 @@ export default function Navbar() {
 
     return (
       <div className={`flex flex-col space-y-2 ${isMobile ? '' : 'mt-auto'}`}>
-        {authItems.map((item, index) => (
+        {authItems && authItems.map((item, index) => (
           <AuthItem key={index} item={item} isMobile={isMobile} onClick={() => setIsOpen(false)} />
         ))}
       </div>
     )
-  }, [user, authItems, setIsOpen])
+  }, [user, authItems, loading, setIsOpen])
 
   return (
     <>

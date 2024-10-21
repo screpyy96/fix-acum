@@ -16,14 +16,14 @@ export default function Dashboard() {
         console.log('User authenticated:', user);
         console.log('User role:', user.role);
         
-        if (user.role === 'client') {
+        if (user.user_metadata.role === 'client') {
           console.log('Redirecting to client dashboard');
           router.push('/dashboard/client');
-        } else if (user.role === 'worker') {
+        } else if (user.user_metadata.role === 'worker') {
           console.log('Redirecting to worker dashboard');
           router.push('/dashboard/worker');
         } else {
-          console.error('Unrecognized user role:', user.role);
+          console.error('Unrecognized user role:', user.user_metadata.role);
           router.push('/');
         }
       } else if (!loading && !user) {

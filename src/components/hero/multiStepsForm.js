@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from '@/context/FormProvider'
 import useAuth from '@/hooks/useAuth'
 import Step1JobDetails from './steps/jobDetails'
+import Step2Location from './steps/location'
 import RegisterClient from './steps/registerClient'
 import { FaArrowLeft } from 'react-icons/fa'
 import { supabase } from '@/lib/supabase'
@@ -42,9 +43,10 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
           description: formData.jobDetails.description,
           tradeType: tradeType,
           jobType: jobType,
+          city: formData.location.city,
+          address: formData.location.address,
           status: 'open',
           budget: formData.jobDetails.budget || null,
-          location: formData.jobDetails.location || null,
           startDate: convertDateValue(formData.jobDetails.startDate),
           endDate: convertDateValue(formData.jobDetails.endDate)
         })
@@ -65,6 +67,8 @@ const MultiStepsForm = ({ tradeType, jobType }) => {
       case 1:
         return <Step1JobDetails />
       case 2:
+        return <Step2Location />
+      case 3:
         return isAuthenticated ? (
           <ReviewSubmit onSubmit={handleJobCreation} />
         ) : (
