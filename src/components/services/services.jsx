@@ -1,51 +1,76 @@
-import React from 'react';
-import { FaClipboardCheck, FaUserCheck, FaTools, FaThumbsUp } from 'react-icons/fa';
 
-const steps = [
-  {
-    id: 1,
-    title: 'Pasul 1: Consultare',
-    description: 'Contactați-ne pentru a discuta despre nevoile dumneavoastră.',
-    icon: <FaClipboardCheck className="h-8 w-8 text-blue-600" />,
-  },
-  {
-    id: 2,
-    title: 'Pasul 2: Evaluare',
-    description: 'Echipa noastră va evalua cerințele și va oferi o soluție personalizată.',
-    icon: <FaUserCheck className="h-8 w-8 text-blue-600" />,
-  },
-  {
-    id: 3,
-    title: 'Pasul 3: Execuție',
-    description: 'Serviciile vor fi executate de profesioniști calificați.',
-    icon: <FaTools className="h-8 w-8 text-blue-600" />,
-  },
-  {
-    id: 4,
-    title: 'Pasul 4: Feedback',
-    description: 'După finalizare, vă vom solicita feedback pentru a ne îmbunătăți serviciile.',
-    icon: <FaThumbsUp className="h-8 w-8 text-blue-600" />,
-  },
-];
+"use client"
+import React, { useState } from 'react';
+import { FaHome, FaTools, FaHandshake, FaStar } from 'react-icons/fa';
 
-const HowOurServiceWorks = () => {
+const ServiceCard = ({ icon, title, description }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
-    <div className="container mx-auto px-4 py-10">
-      <h2 className="text-3xl font-bold text-center mb-6">Cum funcționează serviciile noastre</h2>
-      <p className="text-center mb-10 text-gray-600">
-        Urmați acești pași simpli pentru a beneficia de serviciile noastre de calitate.
+    <div 
+      className="bg-white rounded-lg shadow-lg p-6 transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className={`mb-4 text-4xl ${isHovered ? 'text-blue-600' : 'text-gray-600'} transition-colors duration-300`}>
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className={`text-gray-600 transition-all duration-300 ${isHovered ? 'text-blue-800' : ''}`}>
+        {description}
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {steps.map(step => (
-          <div key={step.id} className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
-            <div className="mb-4">{step.icon}</div>
-            <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-            <p className="text-gray-500 text-center">{step.description}</p>
-          </div>
-        ))}
+    </div>
+  );
+};
+
+const ModernJobPlatform = () => {
+  const services = [
+    {
+      icon: <FaHome />,
+      title: "Găsiți Profesioniști",
+      description: "Conectați-vă cu muncitori calificați pentru proiectele dvs. de acasă."
+    },
+    {
+      icon: <FaTools />,
+      title: "Servicii Diverse",
+      description: "De la reparații minore la renovări majore, avem experți pentru orice nevoie."
+    },
+    {
+      icon: <FaHandshake />,
+      title: "Colaborare Ușoară",
+      description: "Platformă intuitivă pentru comunicare și gestionarea proiectelor."
+    },
+    {
+      icon: <FaStar />,
+      title: "Calitate Garantată",
+      description: "Profesioniști verificați și evaluați pentru cele mai bune rezultate."
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-center text-blue-800 mb-4">
+          Conectăm Talentul cu Oportunitățile
+        </h1>
+        <p className="text-xl text-center text-gray-600 mb-12">
+          Platforma modernă care aduce împreună proprietarii de case și profesioniștii calificați
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {services.map((service, index) => (
+            <ServiceCard key={index} {...service} />
+          ))}
+        </div>
+
+        <div className="mt-16 text-center">
+          <button className="bg-blue-600 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105">
+            Începeți Acum
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default HowOurServiceWorks;
+export default ModernJobPlatform;
