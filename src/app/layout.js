@@ -4,7 +4,7 @@ import "./globals.css";
 import { Inter } from 'next/font/google'
 import Navbar from '@/components/Navbar'
 import GoogleMapsScript from '@/components/googlePlaces/GoogleMapsScript';
-
+ import { Analytics } from "@vercel/analytics/react"
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export const metadata = {
@@ -20,6 +20,7 @@ export default function RootLayout({ children }) {
           {children}
           <Navbar />
           <GoogleMapsScript />
+          <Analytics />
         </body>
       </AuthProvider>
     </html>

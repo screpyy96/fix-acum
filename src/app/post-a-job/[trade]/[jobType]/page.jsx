@@ -1,5 +1,5 @@
 // src/app/post-a-job/[trade]/[jobType]/page.jsx
-import { Metadata } from 'next';
+
 import MultiStepsForm from '@/components/hero/multiStepsForm';
 import { FormProvider } from '@/context/FormProvider';
 
