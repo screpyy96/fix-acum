@@ -16,13 +16,14 @@ export default function WorkerDashboard() {
   const [activeTab, setActiveTab] = useState('Overview');
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading]);
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
 
+  if (!user) {
+    return null; // Nu afișăm nimic în timp ce redirecționăm
+  }
 
   const renderContent = () => {
     switch (activeTab) {

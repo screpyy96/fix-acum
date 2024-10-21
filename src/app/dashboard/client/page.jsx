@@ -2,63 +2,62 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import useAuth from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import JobList from '@/components/jobList/jobList'
 import EditJobModal from '@/components/jobModal/jobModal'
-import {  FaChartBar, FaUser, FaCheckCircle } from 'react-icons/fa'
-
+import { FaChartBar, FaUser, FaCheckCircle } from 'react-icons/fa'
 import { createNotification } from '@/lib/notifications'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css';
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function ClientDashboard() {
-  const { user } = useAuth()
   const [jobs, setJobs] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editingJob, setEditingJob] = useState(null)
   const [stats, setStats] = useState({ totalJobs: 0, activeJobs: 0, completedJobs: 0 })
   const router = useRouter()
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (!user) {
-      router.push('/login')
+    const user = JSON.parse(localStorage.getItem('user'))
+    if (!user || user.role !== 'client') {
+      console.log('User is not a client, redirecting to dashboard')
+      router.push('/dashboard')
     } else {
-      fetchClientData()
+      fetchClientData(user.id)
     }
-  }, [user, router])
+  }, [router])
 
-  const fetchClientData = async () => {
-    setIsLoading(true);
-    setError(null);
+  const fetchClientData = async (clientId) => {
+    setIsLoading(true)
+    setError(null)
     try {
       const { data: jobsData, error: jobsError } = await supabase
-      .from('jobs')
-      .select(`
-        *,
-        job_applications(
+        .from('jobs')
+        .select(`
           *,
-          worker:profiles(*)
-        )
-      `)
-      .eq('client_id', user.id)
-      .order('created_at', { ascending: false });
+          job_applications(
+            *,
+            worker:profiles(*)
+          )
+        `)
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
 
-      if (jobsError) throw jobsError;
+      if (jobsError) throw jobsError
 
       const jobsWithReviewStatus = jobsData.map(job => ({
         ...job,
         has_review: job.reviews && job.reviews.length > 0
-      }));
+      }))
 
-      setJobs(jobsWithReviewStatus);
-      updateStats(jobsData);
+      setJobs(jobsWithReviewStatus)
+      updateStats(jobsData)
     } catch (error) {
-      console.error('Error fetching client data:', error);
-      setError('Failed to load data');
+      console.error('Error fetching client data:', error)
+      setError('Failed to load data')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
@@ -139,10 +138,10 @@ export default function ClientDashboard() {
 
       setJobs(jobs.filter(job => job.id !== jobId));
       fetchClientData(); // Refresh data to update stats
-      toast.success('Job deleted successfully');
+      setMessage('Job deleted successfully');
     } catch (error) {
       console.error('Error deleting job:', error.message);
-      toast.error(`Failed to delete job: ${error.message}`);
+      setMessage(`Failed to delete job: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -231,10 +230,10 @@ export default function ClientDashboard() {
       );
 
       fetchClientData(); // Reîmprospătăm datele pentru a include noul review
-      toast.success('Review submitted successfully!');
+      setMessage('Review submitted successfully!');
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast.error('Failed to submit review: ' + error.message);
+      setMessage('Failed to submit review: ' + error.message);
     }
   };
 
@@ -254,8 +253,10 @@ export default function ClientDashboard() {
     }
   };
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) return <LoadingSpinner />
   if (error) return <div>Error: {error}</div>
+
+  const user = JSON.parse(localStorage.getItem('user'))
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -265,10 +266,8 @@ export default function ClientDashboard() {
             <h1 className="text-3xl font-bold text-gray-800">Welcome, {user?.name}</h1>
             <p className="text-gray-600">Manage your projects and workers</p>
           </div>
-        
         </div>
 
-      
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="flex items-center">
@@ -308,7 +307,11 @@ export default function ClientDashboard() {
             onUpdate={handleUpdateJob} 
           />
         )}
-        <ToastContainer />
+        {message && (
+          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4" role="alert">
+            <p>{message}</p>
+          </div>
+        )}
       </div>
     </div>
   )

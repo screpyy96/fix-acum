@@ -1,34 +1,44 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import  useAuth  from '@/hooks/useAuth';
+import { useAuth, loadUserFromLocalStorage } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function Settings() {
-  const { user, updateUser, isLoading } = useAuth();
+  const { user, loading, setUser } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [trade, setTrade] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-      setName(user.name || '');
-      setEmail(user.email || '');
-      setTrade(user.trade || '');
-    }
-  }, [user]);
+    const initializeUser = async () => {
+      let currentUser = user;
+      if (!currentUser) {
+        currentUser = loadUserFromLocalStorage();
+        if (currentUser) {
+          setUser(currentUser);
+        }
+      }
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+      if (currentUser && (currentUser.role === 'worker' || currentUser.role === 'client')) {
+        setName(currentUser.user_metadata?.name || '');
+        setEmail(currentUser.email || '');
+        setTrade(currentUser.trade || '');
+        setIsLoading(false);
+      } else {
+        console.log('No user found, redirecting to login');
+        router.push('/login');
+      }
+    };
 
-  if (!user) {
-    router.push('/login');
-    return null;
-  }
+    initializeUser();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,12 +46,47 @@ export default function Settings() {
     setSuccess('');
 
     try {
-      const updatedUser = await updateUser({ name, email, ...(user.type === 'worker' ? { trade } : {}) });
+      const currentUser = user || loadUserFromLocalStorage();
+      if (!currentUser) {
+        throw new Error('User not found');
+      }
+
+      // Actualizare date în tabela 'profiles'
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ name, trade: currentUser.role === 'worker' ? trade : null })
+        .eq('id', currentUser.id);
+
+      if (profileError) throw profileError;
+
+      // Actualizare email în autentificare (dacă s-a schimbat)
+      if (email !== currentUser.email) {
+        const { error: emailError } = await supabase.auth.updateUser({ email });
+        if (emailError) throw emailError;
+      }
+
+      // Actualizare metadata utilizator
+      const { data, error: metadataError } = await supabase.auth.updateUser({
+        data: { name, trade: currentUser.role === 'worker' ? trade : null }
+      });
+
+      if (metadataError) throw metadataError;
+
+      // Actualizare stare utilizator în context și localStorage
+      const updatedUser = { ...currentUser, email, user_metadata: { ...currentUser.user_metadata, name }, trade };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
       setSuccess('Profile updated successfully');
     } catch (err) {
-      setError('Failed to update profile');
+      console.error('Error updating profile:', err);
+      setError('Failed to update profile: ' + err.message);
     }
   };
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -69,7 +114,7 @@ export default function Settings() {
             className="w-full p-2 border rounded"
           />
         </div>
-        {user.type === 'worker' && (
+        {user && user.role === 'worker' && (
           <div>
             <label htmlFor="trade" className="block mb-1">Trade</label>
             <input

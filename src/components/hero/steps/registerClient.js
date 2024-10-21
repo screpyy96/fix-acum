@@ -3,11 +3,11 @@ import { motion } from 'framer-motion';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useForm } from '@/context/FormProvider';
 import { supabase } from '@/lib/supabase';
-import  useAuth  from '@/hooks/useAuth'; // Asigură-te că importi contextul de autentificare
+import useAuth from '@/hooks/useAuth';
 
 const RegisterClient = ({ onRegisterSuccess }) => {
-  const { formData, handleInputChange, nextStep } = useForm();
-  const { setUser, setUserRole } = useAuth(); // Adăugăm setUser și setUserRole din contextul de autentificare
+  const { formData, handleInputChange } = useForm();
+  const { setUser } = useAuth(); // Folosim setUser din AuthContext
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -31,27 +31,36 @@ const RegisterClient = ({ onRegisterSuccess }) => {
       const { data, error } = await supabase.auth.signUp({
         email: formData.userDetails.email,
         password: formData.userDetails.password,
+        options: {
+          data: {
+            name: formData.userDetails.name,
+            role: 'client'
+          }
+        }
       });
 
       if (error) throw error;
 
-      // Crearea profilului utilizatorului cu rolul specific
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: data.user.id,
-          name: formData.userDetails.name,
-          email: formData.userDetails.email,
-          role: 'client' // Sau 'worker' pentru RegisterWorker
-        });
+      if (data.user) {
+        // Crearea profilului utilizatorului
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              name: formData.userDetails.name,
+              email: formData.userDetails.email,
+              role: 'client'
+            }
+          ]);
 
-      if (profileError) throw profileError;
+        if (profileError) throw profileError;
 
-      // Actualizăm contextul de autentificare
-      setUser({ ...data.user, role: 'client' });
-      setUserRole('client');
+        // Actualizăm contextul de autentificare
+        setUser({ ...data.user, role: 'client' });
 
-      onRegisterSuccess(); // Apelează această funcție după înregistrarea cu succes
+        onRegisterSuccess(); // Apelează această funcție după înregistrarea cu succes
+      }
     } catch (error) {
       console.error('Error during registration:', error);
       setError(error.message);

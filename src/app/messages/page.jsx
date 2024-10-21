@@ -17,74 +17,86 @@ export default function ConversationsPage() {
   const [unreadCounts, setUnreadCounts] = useState({});
 
   useEffect(() => {
-    
-
     const fetchConversations = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
-      const { data: workerApps, error: workerError } = await supabase
-        .from('job_applications')
-        .select(`
-          job_id,
-          worker_id,
-          jobs (
-            title,
-            client_id
-          ),
-          profiles!job_applications_worker_id_fkey (
-            name
-          )
-        `)
-        .eq('worker_id', user.id);
+      try {
+        const { data: workerApps, error: workerError } = await supabase
+          .from('job_applications')
+          .select(`
+            job_id,
+            worker_id,
+            jobs (
+              title,
+              client_id
+            ),
+            profiles!job_applications_worker_id_fkey (
+              name
+            )
+          `)
+          .eq('worker_id', user.id);
 
-      const { data: clientApps, error: clientError } = await supabase
-        .from('job_applications')
-        .select(`
-          job_id,
-          worker_id,
-          jobs (
-            title,
-            client_id
-          ),
-          profiles!job_applications_worker_id_fkey (
-            name
-          )
-        `)
-        .eq('jobs.client_id', user.id);
+        const { data: clientApps, error: clientError } = await supabase
+          .from('job_applications')
+          .select(`
+            job_id,
+            worker_id,
+            jobs (
+              title,
+              client_id
+            ),
+            profiles!job_applications_worker_id_fkey (
+              name
+            )
+          `)
+          .eq('jobs.client_id', user.id);
 
-      if (workerError || clientError) {
-        console.error('Error fetching conversations:', workerError || clientError);
-        setError(workerError || clientError);
-      } else {
+        if (workerError || clientError) {
+          throw workerError || clientError;
+        }
+
         const allApps = [...(workerApps || []), ...(clientApps || [])];
         const uniqueApps = allApps.filter((app, index, self) =>
           index === self.findIndex((t) => t.job_id === app.job_id)
         );
         setConversations(uniqueApps);
-      }
 
-      // Fetch unread message counts using raw SQL
-      const { data: unreadData, error: unreadError } = await supabase
-        .rpc('get_unread_message_counts', { user_id: user.id });
+        // Fetch unread message counts using raw SQL
+        const { data: unreadData, error: unreadError } = await supabase
+          .rpc('get_unread_message_counts', { user_id: user.id });
 
-      if (unreadError) {
-        console.error('Error fetching unread counts:', unreadError);
-      } else {
+        if (unreadError) {
+          throw unreadError;
+        }
+
         const counts = {};
         unreadData.forEach(item => {
           counts[item.job_id] = parseInt(item.count);
         });
         setUnreadCounts(counts);
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+        setError(error);
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     };
 
     fetchConversations();
-  }, [user, router]);
+  }, [user]);
 
-  // Render nothing if user is null
+  // Render loading state if user is null or loading
+  if (isLoading) {
+    return <div className="text-center mt-8">Loading conversations...</div>;
+  }
+
+  // Render nothing if user is null after loading
   if (!user) return null;
 
   const filteredConversations = conversations.filter(conv =>
@@ -92,10 +104,6 @@ export default function ConversationsPage() {
     (conv.worker && conv.worker.name && conv.worker.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (conv.client && conv.client.name && conv.client.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  if (isLoading) {
-    return <div className="text-center mt-8">Loading conversations...</div>;
-  }
 
   if (error) {
     return <div className="text-red-500 text-center mt-8">Error loading conversations: {error.message}</div>;

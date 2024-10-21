@@ -1,13 +1,15 @@
-import Hero from "@/components/hero/hero";
-import HowOurServiceWorks from "@/components/services/services";
+import dynamic from 'next/dynamic'
 
-
+const Hero = dynamic(() => import('@/components/hero/hero'), {
+  loading: () => <p>Loading...</p>,
+})
+const HowOurServiceWorks = dynamic(() => import('@/components/services/services'), {
+  loading: () => <p>Loading...</p>,
+})
 
 export default function Home() {
   return (
     <main>
-
-
       <Hero/>
       <HowOurServiceWorks/>
     </main>

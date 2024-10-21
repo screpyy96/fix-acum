@@ -11,20 +11,21 @@ import { useRouter } from 'next/navigation'; // Import useRouter from 'next/rout
 export default function ConversationPage() {
   const params = useParams();
   const jobId = params.jobId;
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [jobDetails, setJobDetails] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+ 
   const router = useRouter(); // Initialize useRouter
 
   useEffect(() => {
-    if (!user) {
-      router.push('/');
-      return;
-    }
+    if (!loading && !user?.role) {
+      console.log('No user found, redirecting to login');
+        return;
+        }
+
 
     if (jobId && user) {
       const fetchJobDetails = async () => {
-        setIsLoading(true);
+        
         const { data, error } = await supabase
           .from('jobs')
           .select(`

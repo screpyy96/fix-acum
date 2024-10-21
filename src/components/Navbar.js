@@ -3,19 +3,35 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Menu, X, User, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 'lucide-react'
+import { Menu, X, User, MessageCircle, Settings, LogOut, Briefcase, Users, Hammer, Bell } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
 
+
 export default function Navbar() {
-  const { user, loading, signOut } = useAuth()
+  const { signOut } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [localUser, setLocalUser] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
-    console.log('Auth state:', { user, loading });
-  }, [user, loading]);
+    const checkUser = () => {
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        setLocalUser(JSON.parse(storedUser))
+      } else {
+        setLocalUser(null)
+      }
+    }
+
+    checkUser()
+    window.addEventListener('storage', checkUser)
+
+    return () => {
+      window.removeEventListener('storage', checkUser)
+    }
+  }, [])
 
   const navItems = useMemo(() => [
     { name: 'Joburi', href: '/', icon: Briefcase },
@@ -34,60 +50,54 @@ export default function Navbar() {
           <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
             <item.icon className="h-6 w-6" />
           </div>
-          <motion.span
-            className="ml-4 whitespace-nowrap"
-            initial={false}
-            animate={{ opacity: isMobile || isHovered ? 1 : 0, width: isMobile || isHovered ? 'auto' : 0 }}
-            transition={{ duration: 0.1 }}
-          >
-            {item.name}
-          </motion.span>
+          {(isMobile || isHovered) && (
+            <motion.span
+              className="ml-4 whitespace-nowrap"
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              transition={{ duration: 0.2 }}
+            >
+              {item.name}
+            </motion.span>
+          )}
         </Link>
       ))}
     </div>
   ), [navItems, isHovered])
 
   const authItems = useMemo(() => 
-    user?.role && ['client', 'worker'].includes(user.role)
+    localUser?.role && ['client', 'worker'].includes(localUser.role)
       ? [
           { 
             name: 'Dashboard', 
             icon: User, 
             onClick: () => {
-              const dashboardRoute = user.role === 'client' ? '/dashboard/client' : '/dashboard/worker';
+              const dashboardRoute = localUser.role === 'client' ? '/dashboard/client' : '/dashboard/worker';
               router.push(dashboardRoute);
             }
           },
           { name: 'Setări', icon: Settings, onClick: () => router.push('/settings') },
           { name: 'Notificări', icon: Bell, onClick: () => router.push('/notifications') },
-          { name: 'Mesaje', icon: Bell, href: '/messages' },
+          { name: 'Mesaje', icon: MessageCircle, href: '/messages' },
           { name: 'Logout', icon: LogOut, onClick: async () => {
             try {
               await signOut();
+              localStorage.removeItem('user');
+              setLocalUser(null);
+              router.push('/');
             } catch (error) {
               console.error('Error signing out:', error);
-              // Optionally, add user-facing error handling here
             }
           }},
         ]
       : [],
-    [user?.role, router, signOut]
+    [localUser, router, signOut]
   );
 
   const renderAuthItems = useCallback((isMobile = false) => {
-    if (loading) {
+    if (!localUser) {
       return (
-        <div className="flex flex-col space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="w-9 h-9 bg-white bg-opacity-20 rounded-full"></div>
-          ))}
-        </div>
-      )
-    }
-
-    if (!user || (user && !user.role)) {
-      return (
-        <div className={`flex flex-col ${isMobile ? "space-y-4" : "space-y-2"}`}>
+        <div className={`flex flex-col space-y-2 ${isMobile ? '' : 'mt-auto'}`}>
           <AuthLink href="/login" icon={User} text="Log In" isMobile={isMobile} isHovered={isHovered} onClick={() => setIsOpen(false)} />
           <AuthLink href="/register/worker" icon={Users} text="Sign Up" isMobile={isMobile} isHovered={isHovered} onClick={() => setIsOpen(false)} />
         </div>
@@ -95,15 +105,13 @@ export default function Navbar() {
     }
 
     return (
-      <div className={`flex flex-col ${isMobile ? "space-y-4" : "space-y-2"}`}>
+      <div className={`flex flex-col space-y-2 ${isMobile ? '' : 'mt-auto'}`}>
         {authItems.map((item, index) => (
           <AuthItem key={index} item={item} isMobile={isMobile} isHovered={isHovered} onClick={() => setIsOpen(false)} />
         ))}
       </div>
     )
-  }, [loading, user, authItems, isHovered, setIsOpen])
-
-
+  }, [localUser, authItems, isHovered, setIsOpen])
 
   return (
     <>
@@ -117,24 +125,26 @@ export default function Navbar() {
       >
         <div className="flex flex-col h-full p-4">
           <Link href="/" className="text-2xl font-bold text-white hover:text-yellow-300 transition-colors duration-200 mb-8 block">
-            <div className="flex items-center relative">
-              <div className="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center absolute mr-3">
-                <Hammer size={30} />
+            <div className="flex items-center h-10 relative"> {/* Adăugat relative pentru poziționare absolută a textului */}
+              <div className="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center flex-shrink-0">
+                <Hammer size={24} />
               </div>
-              <motion.span
-                className="ml-12 whitespace-nowrap"
-                initial={false}
-                animate={{ opacity: isHovered ? 1 : 0, width: isHovered ? 'auto' : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                Fix Acum
-              </motion.span>
+              {isHovered && (
+                <motion.span
+                  className="absolute left-12 whitespace-nowrap" // Poziționare absolută
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  transition={{ duration: 0.2 }}
+                >
+                  Fix Acum
+                </motion.span>
+              )}
             </div>
           </Link>
           <div className="flex-grow">
             {renderNavItems()}
           </div>
-          <div className="mt-auto flex items-center space-x-4">
+          <div className="mt-auto">
             {renderAuthItems()}
           </div>
         </div>
@@ -160,8 +170,11 @@ export default function Navbar() {
             className="fixed inset-y-0 right-0 w-64 bg-gradient-to-b from-purple-600 via-pink-500 to-red-500 z-40 md:hidden"
           >
             <div className="flex flex-col h-full p-4 pt-16">
-              <Link href="/" className="text-2xl font-bold text-white hover:text-yellow-300 transition-colors duration-200 mb-8 block">
-                FA
+              <Link href="/" className="text-2xl font-bold text-white hover:text-yellow-300 transition-colors duration-200 mb-8 flex items-center">
+                <div className="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center mr-3">
+                  <Hammer size={24} />
+                </div>
+                <span>Fix Acum</span>
               </Link>
               <div className="flex-grow">
                 {renderNavItems(true)}
@@ -180,7 +193,7 @@ export default function Navbar() {
 const AuthLink = React.memo(({ href, icon: Icon, text, isMobile, isHovered, onClick }) => (
   <Link
     href={href}
-    className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200"
+    className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200 h-10" // Adăugat h-10
     onClick={onClick}
   >
     <div className="w-9 h-9 rounded-full bg-white bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center flex-shrink-0">
@@ -198,10 +211,10 @@ const AuthLink = React.memo(({ href, icon: Icon, text, isMobile, isHovered, onCl
 ))
 
 const AuthItem = React.memo(({ item, isMobile, isHovered, onClick }) => (
-  <div className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200">
+  <div className="group flex items-center text-white hover:text-yellow-300 transition-colors duration-200 h-10"> {/* Adăugat h-10 */}
     {item.onClick ? (
       <button 
-        className="flex items-center w-full py-1 cursor-pointer" 
+        className="flex items-center w-full cursor-pointer" 
         onClick={() => {
           item.onClick()
           onClick()
@@ -212,7 +225,7 @@ const AuthItem = React.memo(({ item, isMobile, isHovered, onClick }) => (
     ) : (
       <Link
         href={item.href}
-        className="flex items-center w-full py-2"
+        className="flex items-center w-full"
         onClick={onClick}
       >
         <AuthItemContent item={item} isMobile={isMobile} isHovered={isHovered} />

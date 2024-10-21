@@ -1,21 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import LoadingSpinner from '@/components/LoadingSpinner'; // Asigură-te că ai această componentă
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        console.log('User not authenticated, redirecting to login');
-        router.push('/login');
-      } else {
+    const checkUserAndRedirect = async () => {
+      if (!loading && user) {
         console.log('User authenticated:', user);
-        console.log('User role:', userRole);
+        console.log('User role:', user.role);
         
         if (user.role === 'client') {
           console.log('Redirecting to client dashboard');
@@ -24,17 +23,22 @@ export default function Dashboard() {
           console.log('Redirecting to worker dashboard');
           router.push('/dashboard/worker');
         } else {
-          console.error('Unrecognized user role:', userRole);
+          console.error('Unrecognized user role:', user.role);
           router.push('/');
         }
+      } else if (!loading && !user) {
+        console.log('User not authenticated, redirecting to login');
+        router.push('/login');
       }
-    }
+      setIsChecking(false);
+    };
+
+    checkUserAndRedirect();
   }, [user, loading, router]);
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (loading || isChecking) {
+    return <LoadingSpinner />;
   }
 
-  // Acest return nu ar trebui să fie niciodată atins datorită redirectărilor de mai sus
   return null;
 }

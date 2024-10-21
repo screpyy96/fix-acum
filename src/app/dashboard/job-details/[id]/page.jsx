@@ -20,7 +20,7 @@ export default function JobDetails({ params }) {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/login');
+       console.log('No user found, redirecting to login');
       } else {
         fetchJobDetails();
         checkApplicationStatus();

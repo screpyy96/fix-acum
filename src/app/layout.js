@@ -1,8 +1,10 @@
 import React from 'react';
 import { AuthProvider } from '@/context/AuthContext';
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import Navbar from '@/components/Navbar';
 import "./globals.css";
+import { Inter } from 'next/font/google'
+import Navbar from '@/components/Navbar'
+
+const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export const metadata = {
   title: "Fix Acum",
@@ -10,19 +12,16 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  console.log('RootLayout rendering');
   return (
-    <html lang="en">
-      <body className="overflow-x-hidden">
+    <html lang="en" className={inter.className}>
         <AuthProvider>
-          <div className="flex flex-col md:flex-row min-h-screen">
-            <Navbar />
-            <main className="flex-1 w-full transition-all duration-300 ease-in-out md:pl-[2rem] lg:pl-[4rem]">
-              {children}
-              <SpeedInsights />
-            </main>
-          </div>
-        </AuthProvider>
+      <body className={inter.className}>
+         {console.log('Body rendering')}
+            {children}
+         <Navbar />
       </body>
+        </AuthProvider>
     </html>
   );
 }

@@ -1,34 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // Importă useRouter
 import { useAuth } from '@/context/AuthContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const router = useRouter();
-  const { signIn, user, userRole, loading } = useAuth();
-
-  useEffect(() => {
-    if (!loading && user && userRole) {
-      redirectBasedOnRole(userRole);
-    }
-  }, [user, userRole, loading]);
-
-  const redirectBasedOnRole = (role) => {
-    switch (role) {
-      case 'client':
-        router.push('/dashboard/client');
-        break;
-      case 'worker':
-        router.push('/dashboard/worker');
-        break;
-      default:
-        router.push('/');
-    }
-  };
+  const { signIn, user, loading } = useAuth();
+  const router = useRouter(); // Inițializează router-ul
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -41,12 +22,19 @@ export default function Login() {
     }
   };
 
+  useEffect(() => {
+    if (!loading && user) {
+      // Redirecționează utilizatorul în funcție de rol
+      if (user.role === 'client') {
+        router.push('/dashboard/client');
+      } else if (user.role === 'worker') {
+        router.push('/dashboard/worker');
+      }
+    }
+  }, [user, loading, router]); // Adaugă user, loading și router ca dependențe
+
   if (loading) {
     return <div>Loading...</div>;
-  }
-
-  if (user && userRole) {
-    return <div>Redirecting...</div>;
   }
 
   return (

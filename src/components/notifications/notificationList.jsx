@@ -15,8 +15,12 @@ export default function NotificationsList() {
           .select('*')
           .eq('user_id', user.id);
 
-        if (error) console.error(error);
-        if (data) setNotifications(data);
+        if (error) {
+          console.error('Error fetching notifications:', error);
+        } else {
+          console.log('Fetched notifications:', data); // Log pentru debugging
+          setNotifications(data);
+        }
       };
 
       fetchNotifications();
@@ -24,6 +28,7 @@ export default function NotificationsList() {
       const notificationSubscription = supabase
         .channel(`public:notifications:user_id=eq.${user.id}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
+          console.log('New notification received:', payload.new); // Log pentru debugging
           setNotifications((current) => [payload.new, ...current]);
         })
         .subscribe();
