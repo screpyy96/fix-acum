@@ -2,7 +2,7 @@
 const { serviceCategories } = require('./src/data/serviceCategories');
 
 module.exports = {
-  siteUrl: process.env.SITE_URL || 'https://fix-acum.ro',
+  siteUrl: process.env.SITE_URL || 'https://www.fix-acum.ro',
   generateRobotsTxt: true,
   transform: async (config, path) => {
     // Logica existentă pentru transformare

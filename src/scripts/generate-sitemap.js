@@ -9,7 +9,7 @@ async function generateSitemap() {
     '/',
     '/about',
     '/contact',
-    '/services',
+    '/servicii',
     '/terms',
     '/privacy',
   ];

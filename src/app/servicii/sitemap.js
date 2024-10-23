@@ -1,7 +1,7 @@
 import { serviceCategories } from '@/data/serviceCategories';
 
 export default function sitemap() {
-  const baseUrl = 'https://fix-acum.ro';
+  const baseUrl = 'https://www.fix-acum.ro';
 
   const servicePages = serviceCategories.flatMap(category => [
     {

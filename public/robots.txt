@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://fix-acum.ro
+Host: https://www.fix-acum.ro
 
 # Sitemaps
-Sitemap: https://fix-acum.ro/sitemap.xml
+Sitemap: https://www.fix-acum.ro/sitemap.xml
