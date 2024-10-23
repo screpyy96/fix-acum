@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
-<url><loc>https://fix-acum.ro/messages</loc><lastmod>2024-10-23T19:08:19.785Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro/dashboard/client</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro/sitemap.xml</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro/notifications</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro/servicii</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-<url><loc>https://fix-acum.ro/settings</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro/dashboard/worker</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro/dashboard</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro/login</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro/register/worker</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://fix-acum.ro/servicii/sitemap.xml</loc><lastmod>2024-10-23T19:08:19.786Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>https://fix-acum.ro/sitemap.xml</loc><lastmod>2024-10-23T20:04:56.117Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://fix-acum.ro/notifications</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://fix-acum.ro/dashboard</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://fix-acum.ro/messages</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://fix-acum.ro</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://fix-acum.ro/register/worker</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://fix-acum.ro/servicii</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>https://fix-acum.ro/servicii/sitemap.xml</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>https://fix-acum.ro/settings</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://fix-acum.ro/dashboard/client</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://fix-acum.ro/login</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://fix-acum.ro/dashboard/worker</loc><lastmod>2024-10-23T20:04:56.118Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
 <url><loc>https://fix-acum.ro/servicii/renovari-interioare</loc></url>
 <url><loc>https://fix-acum.ro/servicii/renovari-interioare/zugravit</loc></url>
 <url><loc>https://fix-acum.ro/servicii/renovari-interioare/tencuiala</loc></url>

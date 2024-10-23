@@ -78,7 +78,7 @@ export default function SubcategoryPage({ params }) {
 
       <div className="mt-8">
         <Link href="/contact" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300">
-          Contactați-ne pentru {subcategory.name}
+        Completeaza formularul pentru o consultație gratuită la {subcategory.name}
         </Link>
       </div>
     </div>

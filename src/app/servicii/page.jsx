@@ -92,8 +92,8 @@ export default function ServicesPage() {
           <h2 className="text-2xl font-semibold mb-4">Contactează-ne pentru o ofertă personalizată</h2>
           <p>
             Suntem aici pentru a-ți oferi soluții profesionale pentru orice proiect de construcții sau reparații. 
-            <Link href="/contact" className="text-blue-600 hover:underline ml-1">
-              Contactează-ne astăzi
+            <Link href="/" className="text-blue-600 hover:underline ml-1">
+              Completeaza formularul pentru o consultație gratuită și o ofertă adaptată nevoilor tale.
             </Link> pentru o consultație gratuită și o ofertă adaptată nevoilor tale.
           </p>
         </section>

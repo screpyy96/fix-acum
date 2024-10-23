@@ -2,15 +2,18 @@ import { serviceCategories } from '@/data/serviceCategories';
 import citiesData from '@/data/cities.json';
 import Image from 'next/image';
 import Link from 'next/link';
+import { generateDescription, generateFAQ } from '@/lib/contentGenerators';
 
 export async function generateMetadata({ params }) {
   const category = serviceCategories.find(cat => cat.id === params.categoryId);
   const subcategory = category?.subcategories.find(sub => sub.id === params.subcategoryId);
   const city = decodeURIComponent(params.city);
 
+  const description = generateDescription({ name: subcategory?.name }, { name: city });
+
   return {
     title: `${subcategory?.name} în ${city} | Servicii Profesionale | Fix Acum`,
-    description: `Găsiți profesioniști de încredere pentru ${subcategory?.name.toLowerCase()} în ${city}. Servicii de calitate, prețuri competitive. Contactați-ne astăzi pentru o ofertă personalizată!`,
+    description: description,
     openGraph: {
       title: `${subcategory?.name} în ${city} | Fix Acum`,
       description: `Servicii profesionale de ${subcategory?.name.toLowerCase()} în ${city}. Calitate garantată, prețuri competitive.`,
@@ -24,6 +27,9 @@ export default function CityServicePage({ params }) {
   const subcategory = category?.subcategories.find(sub => sub.id === params.subcategoryId);
   const city = decodeURIComponent(params.city);
 
+  const description = generateDescription({ name: subcategory?.name }, { name: city });
+  const faqItems = generateFAQ({ name: subcategory?.name }, { name: city });
+
   const cityExists = citiesData.cities.some(c => c.toLowerCase() === city.toLowerCase());
 
   if (!category || !subcategory || !cityExists) {
@@ -35,7 +41,7 @@ export default function CityServicePage({ params }) {
     '@context': 'https://schema.org',
     '@type': 'Service',
     name: `${subcategory.name} în ${city}`,
-    description: `Servicii profesionale de ${subcategory.name.toLowerCase()} în ${city}. Calitate garantată, prețuri competitive.`,
+    description: generateDescription({ name: subcategory.name }, { name: city }),
     provider: {
       '@type': 'Organization',
       name: 'Fix Acum',
@@ -90,24 +96,27 @@ export default function CityServicePage({ params }) {
           <li>Curățenie post-intervenție</li>
         </ul>
 
-        <h2 className="text-2xl font-semibold mt-8 mb-4">Întrebări frecvente despre {subcategory.name} în {city}</h2>
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-semibold">Cât costă serviciile de {subcategory.name.toLowerCase()} în {city}?</h3>
-            <p>Prețurile variază în funcție de complexitatea proiectului. Contactați-ne pentru o evaluare gratuită și o ofertă personalizată.</p>
-          </div>
-          <div>
-            <h3 className="font-semibold">Cât durează un proiect tipic de {subcategory.name.toLowerCase()}?</h3>
-            <p>Durata depinde de amploarea lucrării. Vă vom oferi o estimare detaliată după evaluarea proiectului.</p>
-          </div>
-          {/* Adăugați mai multe întrebări frecvente */}
-        </div>
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">Despre serviciul nostru</h2>
+          <p className="text-lg">{description}</p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">Întrebări frecvente despre {subcategory?.name} în {city}</h2>
+          {faqItems.map((item, index) => (
+            <div key={index} className="mb-4">
+              <h3 className="text-xl font-medium mb-2">{item.question}</h3>
+              <p>{item.answer}</p>
+            </div>
+          ))}
+        </section>
 
         <div className="mt-8 bg-gray-100 p-6 rounded-lg">
           <h2 className="text-2xl font-semibold mb-4">Solicitați o ofertă pentru {subcategory.name} în {city}</h2>
           <p className="mb-4">Completați formularul nostru online sau sunați-ne pentru a primi o ofertă personalizată pentru proiectul dumneavoastră.</p>
-          <Link href="/contact" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300">
-            Contactați-ne acum
+          <Link href="/" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300">
+          Completeaza formularul pentru o consultație gratuită și o ofertă adaptată nevoilor tale.
+
           </Link>
         </div>
 
