@@ -3,15 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase'; // Ensure this import is from the single instance
-
-const trades = [
-  "Instalator", "Fierar", "Zidar", "Constructor", "Tâmplar", "Curățenie", 
-  "Drenaj", "Pavator", "Electrician", "Montator", "Grădinar", "Inginer", 
-  "Meșter", "Bucătării", "Lăcătuș", "Mansardări", "Zugrav", "Dezinsecție", 
-  "Tencuitor", "Mutare", "Energie", "Acoperișuri", "Securitate", 
-  "Specialist", "Pietrar", "Piscine", "Faianțar", "Meșteșugar", "Arborist", 
-  "Ferestre"
-];
+import { allTrades } from '@/data/serviceCategories'; // Importăm allTrades
 
 export default function RegisterWorker() {
   const [name, setName] = useState('');
@@ -152,7 +144,7 @@ export default function RegisterWorker() {
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
             >
               <option value="">Vă rugăm să selectați</option>
-              {trades.map((trade) => (
+              {allTrades.map((trade) => (
                 <option key={trade} value={trade}>{trade}</option>
               ))}
             </select>
